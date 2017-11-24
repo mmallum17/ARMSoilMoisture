@@ -49,7 +49,7 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-/*uint8_t screen[1024];*/
+uint8_t screen[1024];
 /*uint8_t fill[1024];*/
 /* USER CODE END PV */
 
@@ -253,8 +253,8 @@ void ssd1306Init()
 	ssd1306WriteCommand(0x14);
 	ssd1306WriteCommand(0xAF);
 	HAL_Delay(100);
-	/*clearScreen();*/
-	updateScreen();
+	clearScreen();
+	/*updateScreen();*/
 }
 
 void ssd1306WriteCommand(uint8_t command)
@@ -265,19 +265,19 @@ void ssd1306WriteCommand(uint8_t command)
 	HAL_I2C_Master_Transmit(&hi2c1, (0x3D)<<1, data, 2, 10);
 }
 
-/*void clearScreen()
+void clearScreen()
 {
-	for(uint8_t i = 0; i < 1024; i++)
+	for(uint16_t i = 0; i < 1024; i++)
 	{
 		screen[i] = 0x00;
 	}
 	/*screen[0] = 0x40;*/
-	/*updateScreen();
-}*/
+	updateScreen();
+}
 
 void updateScreen()
 {
-	uint8_t fill[1024];
+	/*uint8_t fill[1024];*/
 	/*for(uint8_t i = 0; i < 128; i++)
 	{
 		/*screen[i] = 0x00;*/
@@ -286,10 +286,10 @@ void updateScreen()
 	/*screen[0] = 0x40;*/
 	/*fill[0] = 0x40;*/
 
-	for(uint16_t i = 0; i < 1024; i++)
+	/*for(uint16_t i = 0; i < 1024; i++)
 	{
 		fill[i] = 0x00;
-	}
+	}*/
 
 	/*uint8_t sendData[1025];
 	sendData[0] = 0x40;*/
@@ -299,7 +299,7 @@ void updateScreen()
 		ssd1306WriteCommand(0x00);
 		ssd1306WriteCommand(0x10);
 
-		ssd1306_WriteData(&fill[i * 128], 128);
+		ssd1306_WriteData(&screen[i * 128], 128);
 		/*HAL_I2C_Master_Transmit(&hi2c1, (0x3D)<<1, screen, 129, 20);*/
 	}
 
