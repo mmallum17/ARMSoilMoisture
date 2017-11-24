@@ -49,7 +49,8 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-uint8_t screen[1024];
+/*uint8_t screen[1024];*/
+/*uint8_t fill[1024];*/
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,6 +65,7 @@ void ssd1306WriteCommand(uint8_t command);
 void clearScreen();
 void updateScreen();
 void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color);
+void ssd1306_WriteData(uint8_t* data, uint16_t count);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -251,7 +253,8 @@ void ssd1306Init()
 	ssd1306WriteCommand(0x14);
 	ssd1306WriteCommand(0xAF);
 	HAL_Delay(100);
-	clearScreen();
+	/*clearScreen();*/
+	updateScreen();
 }
 
 void ssd1306WriteCommand(uint8_t command)
@@ -262,46 +265,54 @@ void ssd1306WriteCommand(uint8_t command)
 	HAL_I2C_Master_Transmit(&hi2c1, (0x3D)<<1, data, 2, 10);
 }
 
-void clearScreen()
+/*void clearScreen()
 {
 	for(uint8_t i = 0; i < 1024; i++)
 	{
 		screen[i] = 0x00;
 	}
 	/*screen[0] = 0x40;*/
-	updateScreen();
-}
+	/*updateScreen();
+}*/
 
 void updateScreen()
 {
-	/*uint8_t fill[129];*/
-	/*for(uint8_t i = 1; i < 129; i++)
+	uint8_t fill[1024];
+	/*for(uint8_t i = 0; i < 128; i++)
 	{
-		screen[i] = 0x00;
-	}
-	screen[0] = 0x40;*/
+		/*screen[i] = 0x00;*/
+		/*fill[i] = 0x00;
+	}*/
+	/*screen[0] = 0x40;*/
+	/*fill[0] = 0x40;*/
 
-	uint8_t sendData[1025];
-	sendData[0] = 0x40;
-	for(uint8_t i = 1; i < 1025; i++)
+	for(uint16_t i = 0; i < 1024; i++)
+	{
+		fill[i] = 0x00;
+	}
+
+	/*uint8_t sendData[1025];
+	sendData[0] = 0x40;*/
+	for(uint8_t i = 0; i < 8; i++)
 	{
 		ssd1306WriteCommand(0xB0 + i);
 		ssd1306WriteCommand(0x00);
 		ssd1306WriteCommand(0x10);
 
-		HAL_I2C_Master_Transmit(&hi2c1, (0x3D)<<1, screen, 129, 20);
+		ssd1306_WriteData(&fill[i * 128], 128);
+		/*HAL_I2C_Master_Transmit(&hi2c1, (0x3D)<<1, screen, 129, 20);*/
 	}
 
 	/*HAL_Delay(10000);
 	ssd1306WriteCommand(0xAE);*/
 }
 
-void ssd1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
+/*void ssd1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
 {
 	if (x >= 128 || y >= 64)
 	{
 		/* Error */
-		return;
+	/*	return;
 	}
 
 	/* Check if pixels are inverted
@@ -310,11 +321,23 @@ void ssd1306_DrawPixel(uint16_t x, uint16_t y, SSD1306_COLOR_t color)
 	}*/
 
 	/* Set color */
-	if (color == SSD1306_COLOR_WHITE) {
+	/*if (color == SSD1306_COLOR_WHITE) {
 		SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] |= 1 << (y % 8);
 	} else {
 		SSD1306_Buffer[x + (y / 8) * SSD1306_WIDTH] &= ~(1 << (y % 8));
 	}
+}*/
+
+void ssd1306_WriteData(uint8_t* data, uint16_t count)
+{
+	uint8_t sendData[count + 1];
+	uint8_t i;
+	sendData[0] = 0x40;
+	for(i = 1; i <= count; i++)
+	{
+		sendData[i] = data[i - 1];
+	}
+	HAL_I2C_Master_Transmit(&hi2c1, (0x3D) << 1, sendData, count + 1, 50);
 }
 /* USER CODE END 4 */
 
