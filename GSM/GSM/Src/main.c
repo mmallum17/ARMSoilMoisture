@@ -169,6 +169,8 @@ void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color);
 void ssd1306_WriteData(uint8_t* data, uint16_t count);
 char ssd1306_WriteChar(char ch, uint8_t color);
 char ssd1306_WriteString(char* str, uint8_t color);
+void executeCommand(char* command, uint8_t length, uint32_t timeout);
+void getSignalStrength();
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -206,6 +208,26 @@ int main(void)
   /* USER CODE BEGIN 2 */
   ssd1306Init();
 
+  HAL_Delay(20000);
+  /*executeCommand("AT+CPIN?\r", 8);*/
+  /*executeCommand("AT+CSQ\r", 7);*/
+  executeCommand("AT+CREG?\r", 9, 500);
+  executeCommand("AT+CGATT?\r", 10, 500);
+  /*executeCommand("AT+CIPMUX=0\r", 12, 500);
+  executeCommand("AT+CIPSTATUS\r", 13, 500);*/
+  executeCommand("AT+CGDCONT=1,\"IP\",\"wholesale\"\r", 30, 500);
+  /*executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 20000);
+  executeCommand("AT+CIPSEND\r", 11, 500);*/
+  executeCommand("AT+CSTT=\"wholesale\"\r", 20, 500);
+  executeCommand("AT+CIPSTATUS\r", 13, 500);
+  executeCommand("AT+CIICR\r", 9, 5000);
+  executeCommand("AT+CIPSTATUS\r", 13, 500);
+  executeCommand("AT+CIFSR\r", 9, 500);
+  executeCommand("AT+CIPSTATUS\r", 13, 500);
+  HAL_Delay(5000);
+  /*executeCommand("AT+CIICR\r", 9, 20000);
+  executeCommand("AT+CIFSR\r", 9, 500);*/
+  /*executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 39, 5000);*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -213,7 +235,12 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-
+	  /*HAL_Delay(2000);
+	  executeCommand("AT+CSQ\r", 7);
+	  /*getSignalStrength();*/
+	  /*currentX = 0;
+	  currentY = 0;*/
+	  /*executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 5000);*/
   /* USER CODE BEGIN 3 */
 
   }
@@ -474,12 +501,22 @@ char ssd1306_WriteChar(char ch, uint8_t color)
 	uint32_t i, b, j;
 
 	// Check bounds of LCD
-	if (128 <= (currentX + 7) ||
+	if(128 <= (currentX + 7))
+	{
+		currentX = 0;
+		currentY += 11;
+	}
+	if(64 <= (currentY + 10))
+	{
+		currentX = 0;
+		currentY = 0;
+	}
+	/*if (128 <= (currentX + 7) ||
 		64 <= (currentY + 10))
 	{
 		// Er is geen plaats meer
 		return 0;
-	}
+	}*/
 
 	// We gaan door het font
 	for (i = 0; i < 10; i++)
@@ -522,6 +559,43 @@ char ssd1306_WriteString(char* str, uint8_t color)
 
 	// Alles gelukt, we sturen dus 0 terug
 	return *str;
+}
+
+void getSignalStrength()
+{
+	uint8_t xmitBuffer[10] = "AT+CSQ\r";
+	uint8_t rcvBuffer[50];
+
+	for(uint8_t i = 0; i < 50; i++)
+	{
+		rcvBuffer[i] = 0;
+	}
+
+	HAL_UART_Transmit(&huart4, xmitBuffer, 7, 50);
+	HAL_UART_Receive(&huart4, rcvBuffer, 50, 500);
+
+	ssd1306_WriteString((char*)rcvBuffer, 1);
+	updateScreen();
+}
+
+void executeCommand(char* command, uint8_t length, uint32_t timeout)
+{
+	uint8_t rcvBuffer[80];
+
+	HAL_Delay(2000);
+	clearScreen();
+	currentX = 0;
+	currentY = 0;
+	for(uint8_t i = 0; i < 50; i++)
+	{
+		rcvBuffer[i] = 0;
+	}
+
+	HAL_UART_Transmit(&huart4, (uint8_t*)command, length, 50);
+	HAL_UART_Receive(&huart4, rcvBuffer, 80, timeout);
+
+	ssd1306_WriteString((char*)rcvBuffer, 1);
+	updateScreen();
 }
 /* USER CODE END 4 */
 

@@ -176,7 +176,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  uint8_t test = 1;
+  char buffer[50];
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -211,7 +212,9 @@ int main(void)
   ssd1306_WriteChar('R', 1);
   ssd1306_WriteChar('L', 1);
   ssd1306_WriteChar('D', 1);*/
-  ssd1306_WriteString("Hello World", 1);
+  sprintf(buffer, "Test %d", test);
+  /*ssd1306_WriteString("Hello World", 1);*/
+  ssd1306_WriteString(buffer, 1);
   updateScreen();
   /* USER CODE END 2 */
 
