@@ -220,6 +220,8 @@ int main(void)
   executeCommand("AT+CIPSEND\r", 11, 500);*/
   executeCommand("AT+CSTT=\"wholesale\"\r", 20, 500);
   executeCommand("AT+CIPSTATUS\r", 13, 500);
+  executeCommand("AT+CGACT=1,1\r", 13, 500);
+  executeCommand("AT+CIPSTATUS\r", 13, 500);
   executeCommand("AT+CIICR\r", 9, 5000);
   executeCommand("AT+CIPSTATUS\r", 13, 500);
   executeCommand("AT+CIFSR\r", 9, 500);
@@ -241,6 +243,7 @@ int main(void)
 	  /*currentX = 0;
 	  currentY = 0;*/
 	  /*executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 5000);*/
+	  executeCommand("AT+CREG?\r", 9, 500);
   /* USER CODE BEGIN 3 */
 
   }
