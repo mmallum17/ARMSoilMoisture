@@ -213,6 +213,7 @@ int main(void)
   executeCommand("AT+CSQ\r", 7, 500);
   executeCommand("AT+CREG?\r", 9, 500);
   executeCommand("AT+CGATT?\r", 10, 500);
+  executeCommand("AT+CIPMODE=1\r", 13, 2000);
   /*executeCommand("AT+CIPMUX=0\r", 12, 500);
   executeCommand("AT+CIPSTATUS\r", 13, 500);*/
   /*executeCommand("AT+CGDCONT=1,\"IP\",\"wholesale\"\r", 30, 500);*/
@@ -226,12 +227,16 @@ int main(void)
   executeCommand("AT+CIPSTATUS\r", 13, 500);
   executeCommand("AT+CIFSR\r", 9, 500);
   executeCommand("AT+CIPSTATUS\r", 13, 500);
-  HAL_Delay(5000);
+  /*HAL_Delay(5000);*/
   /*executeCommand("AT+CIICR\r", 9, 20000);
   executeCommand("AT+CIFSR\r", 9, 500);*/
   executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 5000);
-  executeCommand("AT+CIPSEND\r", 11, 500);
-  executeCommand("TESTING...123\032", 14, 2000);
+  /*executeCommand("AT+CIPSEND\r", 11, 500);*/
+  executeCommand("TEST", 4, 2000);
+  HAL_Delay(1000);
+  executeCommand("+++", 3, 500);
+  HAL_Delay(1000);
+  executeCommand("AT+CIPCLOSE\r", 12, 2000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
