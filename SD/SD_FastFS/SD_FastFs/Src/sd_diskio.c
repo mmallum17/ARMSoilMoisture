@@ -64,6 +64,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+#include "main.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -85,7 +86,7 @@ DRESULT sd_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count);
   DRESULT sd_ioctl (BYTE pdrv, BYTE cmd, void *buff);
 #endif /* _USE_IOCTL == 1 */
 
-Diskio_drvTypeDef  USER_Driver =
+Diskio_drvTypeDef  SD_Driver =
 {
   sd_initialize,
   sd_status,
@@ -119,7 +120,6 @@ DSTATUS sd_initialize (
     uint8_t cmd0[6] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x95};
 	uint8_t cmd55[6] = {0x40 | 55, 0x00, 0x00, 0x00, 0x00, 0x65};
 	uint8_t cmd41[6] = {0x40 | 41, 0x40, 0x00, 0x00, 0x00, 0x77};
-	uint8_t cmd1[6] = {0x40 | 1, 0x00, 0x00, 0x00, 0x00, 0x77};
 	uint8_t cmd8[6] = {0x40 | 8, 0x00, 0x00, 0x01, 0xAA, 0x87};
 	uint8_t cmd58[6] = {0x40 | 58, 0x00, 0x00, 0x01, 0xAA, 0x87};
 	uint8_t data[10];
@@ -310,6 +310,143 @@ DRESULT sd_read (
 )
 {
   /* USER CODE BEGIN READ */
+	uint8_t cmd17[6] = {0x40 | 17, 0x00, 0x00, 0x00, 0x00, 0x01};
+	uint8_t cmd18[6] = {0x40 | 18, 0x00, 0x00, 0x00, 0x00, 0x01};
+	uint8_t cmd12[6] = {0x40 | 12, 0x00, 0x00, 0x00, 0x00, 0x01};
+	uint8_t receive = 0xFF;
+	uint8_t high = 0xFF;
+	uint16_t n = 10;
+	uint16_t i = 0;
+	char display[15];
+
+
+
+
+	/*Check Parameters*/
+	if(pdrv || !count)
+	{
+		return RES_PARERR;
+	}
+
+	/*Read Single block*/
+	if(count == 1)
+	{
+
+		cmd17[1] = (BYTE)(sector >> 24);
+		cmd17[2] = (BYTE)(sector >> 16);
+		cmd17[3] = (BYTE)(sector >> 8);
+		cmd17[4] = (BYTE)(sector);
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		/*Send CMD17*/
+		HAL_SPI_Transmit(&hspi1, cmd17, sizeof(cmd17), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+
+		/*Get Data Token*/
+		n = 20000;
+		receive = 0xFF;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+
+		}while((receive == 0xFF) && --n);
+		if(receive != 0xFE)
+		{
+
+			return 0;
+		}
+
+		/*Read Actual Data*/
+		for (i=0; i<512; i++)
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &buff[i], sizeof(high), 0x1000);
+		}
+		/*Discard CRC*/
+		HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+			HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		/*Debug results on OLED Screen*/
+		clearScreen();
+		ssd1306_WriteString("HA", 1);
+		sprintf(display, "%02X ", receive);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+	}
+	else	/*Multiple Block Read*/
+	{
+		cmd18[1] = (BYTE)(sector >> 24);
+		cmd18[2] = (BYTE)(sector >> 16);
+		cmd18[3] = (BYTE)(sector >> 8);
+		cmd18[4] = (BYTE)(sector);
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		/*Send CMD18*/
+		HAL_SPI_Transmit(&hspi1, cmd18, sizeof(cmd18), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+
+		/*Get Data*/
+		do
+		{
+			/*Get Data Token*/
+			n = 20000;
+			receive = 0xFF;
+			do
+			{
+				HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+
+			}while((receive == 0xFF) && --n);
+			if(receive != 0xFE)
+			{
+				return 0;
+			}
+			/*Read Actual Data*/
+			for (i=0; i<512; i++)
+			{
+				HAL_SPI_TransmitReceive(&hspi1, &high, &buff[i], sizeof(high), 0x1000);
+			}
+			/*Discard CRC*/
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+			buff += 512;
+		}while(--count);
+
+		/*Send CMD12 to stop*/
+		HAL_SPI_Transmit(&hspi1, cmd12, sizeof(cmd12), 0x1000);
+		HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+			HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		/*Debug results on OLED Screen*/
+		clearScreen();
+		ssd1306_WriteString("HA", 1);
+		sprintf(display, "%02X ", receive);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+	}
     return RES_OK;
   /* USER CODE END READ */
 }
@@ -331,7 +468,212 @@ DRESULT sd_write (
 )
 { 
   /* USER CODE BEGIN WRITE */
-  /* USER CODE HERE */
+	uint8_t cmd55[6] = {0x40 | 55, 0x00, 0x00, 0x00, 0x00, 0x65};
+	uint8_t receive = 0xFF;
+	uint8_t high = 0xFF;
+	uint8_t token = 0xFE;
+	uint16_t n = 10;
+	uint16_t i = 0;
+	char display[15];
+	uint8_t cmd25[6] = {0x40 | 25, 0x00, 0x00, 0x00, 0x00, 0x01};
+	uint8_t cmd24[6] = {0x40 | 24, 0x00, 0x00, 0x00, 0x00, 0x01};
+	uint8_t cmd23[6] = {0x40 | 23, 0x00, 0x00, 0x00, 0x00, 0x01};
+	/*char* test = (char*)buff;
+	test[5] = 0;*/
+
+	if(pdrv || !count)
+	{
+		return RES_PARERR;
+	}
+
+	if(count == 1)
+	{
+		/*clearScreen();
+		ssd1306_WriteString(test, 1);
+		updateScreen();
+		HAL_Delay(1000);*/
+		cmd24[1] = (BYTE)(sector >> 24);
+		cmd24[2] = (BYTE)(sector >> 16);
+		cmd24[3] = (BYTE)(sector >> 8);
+		cmd24[4] = (BYTE)(sector);
+		token = 0xFE;
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		/*Send CMD24*/
+		HAL_SPI_Transmit(&hspi1, cmd24, sizeof(cmd24), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		/*Get Response*/
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+
+		/*Check if busy*/
+		n = 500;
+		receive = 0x00;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while(receive != 0xFF && --n);
+		if(receive != 0xFF)
+		{
+			return RES_ERROR;
+		}
+
+		/*Send Token*/
+		HAL_SPI_Transmit(&hspi1, &token, sizeof(token), 0x1000);
+		/*Send Data*/
+		HAL_SPI_Transmit(&hspi1, buff, 512, 0x5000);
+		/*Send dummy CRC*/
+		HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Get Data Response*/
+		HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		if((receive & 0x1F) != 0x05)
+		{
+			return RES_ERROR;
+		}
+
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+			HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		/*Debug results on OLED Screen*/
+		clearScreen();
+		ssd1306_WriteString("HA", 1);
+		sprintf(display, "%02X ", receive);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+	}
+	else
+	{
+		cmd23[1] = (BYTE)(((DWORD)count) >> 24);
+		cmd23[2] = (BYTE)(((DWORD)count) >> 16);
+		cmd23[3] = (BYTE)(((DWORD)count) >> 8);
+		cmd23[4] = (BYTE)(((DWORD)count));
+		token = 0xFC;
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		/*Send CMD55*/
+		HAL_SPI_Transmit(&hspi1, cmd55, sizeof(cmd55), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+				HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		/*Debug results on OLED Screen*/
+		clearScreen();
+		ssd1306_WriteString("HA", 1);
+		sprintf(display, "%02X ", receive);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		/*Send CMD23*/
+		HAL_SPI_Transmit(&hspi1, cmd23, sizeof(cmd23), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+				HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		/*Debug results on OLED Screen*/
+		clearScreen();
+		ssd1306_WriteString("Ho", 1);
+		sprintf(display, "%02X ", receive);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+
+		cmd25[1] = (BYTE)(sector >> 24);
+		cmd25[2] = (BYTE)(sector >> 16);
+		cmd25[3] = (BYTE)(sector >> 8);
+		cmd25[4] = (BYTE)(sector);
+		token = 0xFC;
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		/*Send CMD25*/
+		HAL_SPI_Transmit(&hspi1, cmd25, sizeof(cmd25), 0x1000);
+		n = 10;
+		receive = 0xFF;
+		/*Get Response*/
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while((receive & 0x80) && --n);
+
+		/*Send Data*/
+		do
+		{
+			/*Check if busy*/
+			n = 500;
+			receive = 0x00;
+			do
+			{
+				HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+			}while(receive != 0xFF && --n);
+			if(receive != 0xFF)
+			{
+				return RES_ERROR;
+			}
+
+			/*Send Token*/
+			HAL_SPI_Transmit(&hspi1, &token, sizeof(token), 0x1000);
+			/*Send Data*/
+			HAL_SPI_Transmit(&hspi1, buff, 512, 0x5000);
+			/*Send dummy CRC*/
+			HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+			HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+			/*Get Data Response*/
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+			if((receive & 0x1F) != 0x05)
+			{
+				return RES_ERROR;
+			}
+			buff += 512;
+		}while(--count);
+
+		/*Check if busy*/
+		n = 500;
+		receive = 0x00;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while(receive != 0xFF && --n);
+		if(receive != 0xFF)
+		{
+			return RES_ERROR;
+		}
+
+		token = 0xFD;
+		/*Send Token*/
+		HAL_SPI_Transmit(&hspi1, &token, sizeof(token), 0x1000);
+
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+				HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		/*Debug results on OLED Screen*/
+		clearScreen();
+		ssd1306_WriteString("Ho", 1);
+		sprintf(display, "%02X ", receive);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+	}
     return RES_OK;
   /* USER CODE END WRITE */
 }
@@ -353,6 +695,36 @@ DRESULT sd_ioctl (
 {
   /* USER CODE BEGIN IOCTL */
     DRESULT res = RES_ERROR;
+    uint8_t high = 0xFF;
+    uint8_t receive = 0;
+    uint16_t n = 500;
+    uint8_t i = 0;
+
+    switch(cmd)
+    {
+    case CTRL_SYNC :
+    	/*Check if busy*/
+		n = 500;
+		receive = 0x00;
+		/*Set CS low*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while(receive != 0xFF && --n);
+		if(receive != 0xFF)
+		{
+			return RES_ERROR;
+		}
+		/*Send dummy bytes... required*/
+		for (i=0; i<8; i++)
+				HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);
+		/*Set CS high*/
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		res = RES_OK;
+		break;
+    }
     return res;
   /* USER CODE END IOCTL */
 }
