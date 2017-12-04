@@ -543,8 +543,15 @@ char ssd1306_WriteString(char* str, uint8_t color)
 void testSD()
 {
 	uint32_t wbytes;
-	uint8_t wtext[] = "test to write logical disk";
-	char display[15];
+	uint8_t wtext[550] = "test to write logical disk";
+	char display[40];
+	uint8_t test[4];
+	uint8_t resp;
+
+	for(uint16_t i = 0; i < 550; i++)
+	{
+		wtext[i] = 0;
+	}
 
 	if(FATFS_LinkDriver(&SD_Driver, mynewdiskPath) == 0)
 	{
@@ -558,16 +565,24 @@ void testSD()
 			ssd1306_WriteString("Mounted", 1);
 			updateScreen();
 			HAL_Delay(1000);
-			if(f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+			if(f_open(&MyFile, "STM32.TXT", FA_READ) == FR_OK)
 			{
 				clearScreen();
 				ssd1306_WriteString("Opened", 1);
 				updateScreen();
 				HAL_Delay(1000);
-				if(f_write(&MyFile, wtext, sizeof(wtext), (void *)&wbytes) == FR_OK)
-				{
+				/*if(f_write(&MyFile, wtext, sizeof(wtext), (void *)&wbytes) == FR_OK)*/
+				/*clearScreen();*/
+				f_gets((TCHAR*)test, sizeof(test), &MyFile);
+				/*sprintf(display, "RESP: %d", resp);
+				ssd1306_WriteString(display, 1);
+				updateScreen();
+				HAL_Delay(1000);*/
+				/*if(resp == FR_OK)*/
+				/*if(fread(&MyFile, (void*)wtext, 4, &wbytes) == FR_OK)*/
+				/*{*/
 					clearScreen();
-					sprintf(display, "Written %lu", wbytes);
+					sprintf(display, "Read %c%c%c", test[0], test[1], test[2]);
 					ssd1306_WriteString(display, 1);
 					updateScreen();
 					HAL_Delay(1000);
@@ -576,7 +591,12 @@ void testSD()
 					ssd1306_WriteString("Closed", 1);
 					updateScreen();
 					HAL_Delay(1000);
-				}
+				/*}*/
+				/*fclose(&MyFile);
+				clearScreen();
+				ssd1306_WriteString("Closed", 1);
+				updateScreen();
+				HAL_Delay(1000);*/
 			}
 			else
 			{
