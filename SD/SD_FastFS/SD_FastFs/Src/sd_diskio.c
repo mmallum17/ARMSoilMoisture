@@ -319,7 +319,11 @@ DRESULT sd_read (
 	uint16_t i = 0;
 	char display[15];
 
-
+	clearScreen();
+	sprintf(display, "READING %lu %d", sector, count);
+	ssd1306_WriteString(display, 1);
+	updateScreen();
+	HAL_Delay(1000);
 
 
 	/*Check Parameters*/
@@ -474,12 +478,17 @@ DRESULT sd_write (
 	uint8_t token = 0xFE;
 	uint16_t n = 10;
 	uint16_t i = 0;
-	char display[15];
+	char display[30];
 	uint8_t cmd25[6] = {0x40 | 25, 0x00, 0x00, 0x00, 0x00, 0x01};
 	uint8_t cmd24[6] = {0x40 | 24, 0x00, 0x00, 0x00, 0x00, 0x01};
 	uint8_t cmd23[6] = {0x40 | 23, 0x00, 0x00, 0x00, 0x00, 0x01};
 	/*char* test = (char*)buff;
 	test[5] = 0;*/
+	clearScreen();
+	sprintf(display, "WRITING %c %lu %d", buff[0], sector, count);
+	ssd1306_WriteString(display, 1);
+	updateScreen();
+	HAL_Delay(1000);
 
 	if(pdrv || !count)
 	{
@@ -534,6 +543,14 @@ DRESULT sd_write (
 		{
 			return RES_ERROR;
 		}
+
+		/*Check if busy*/
+		n = 500;
+		receive = 0x00;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while(receive != 0xFF && --n);
 
 		/*Send dummy bytes... required*/
 		for (i=0; i<8; i++)
@@ -643,6 +660,14 @@ DRESULT sd_write (
 			{
 				return RES_ERROR;
 			}
+
+			/*Check if busy*/
+			n = 500;
+			receive = 0x00;
+			do
+			{
+				HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+			}while(receive != 0xFF && --n);
 			buff += 512;
 		}while(--count);
 
@@ -662,6 +687,14 @@ DRESULT sd_write (
 		/*Send Token*/
 		HAL_SPI_Transmit(&hspi1, &token, sizeof(token), 0x1000);
 
+
+		/*Check if busy*/
+		n = 500;
+		receive = 0x00;
+		do
+		{
+			HAL_SPI_TransmitReceive(&hspi1, &high, &receive, sizeof(high), 0x1000);
+		}while(receive != 0xFF && --n);
 		/*Send dummy bytes... required*/
 		for (i=0; i<8; i++)
 				HAL_SPI_Transmit(&hspi1, &high, sizeof(high), 0x1000);

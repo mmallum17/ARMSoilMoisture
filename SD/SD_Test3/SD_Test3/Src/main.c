@@ -49,8 +49,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l1xx_hal.h"
-#include "sd_diskio.h"
-/*#include "fatfs.h"*/
+#include "fatfs.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -176,15 +175,7 @@ static void MX_SPI1_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-/*void ssd1306Init();
-void ssd1306WriteCommand(uint8_t command);
-void clearScreen();
-void updateScreen();
-void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color);
-void ssd1306_WriteData(uint8_t* data, uint16_t count);
-char ssd1306_WriteChar(char ch, uint8_t color);
-char ssd1306_WriteString(char* str, uint8_t color);*/
-void testSD();
+void sd_test();
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -218,13 +209,11 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
-  ssd1306Init();
-  /*sd_initialize(0);*/
-  testSD();
   /*MX_FATFS_Init();*/
+  ssd1306Init();
 
   /* USER CODE BEGIN 2 */
-
+  sd_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -363,6 +352,51 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void sd_test()
+{
+	uint32_t wbytes; /* File write counts */
+	uint8_t wtext[] = "text to write logical disk"; /* File write buffer */
+
+	if(FATFS_LinkDriver(&SD_Driver, mynewdiskPath) == 0)
+	{
+		clearScreen();
+		ssd1306_WriteString("Linked", 1);
+		updateScreen();
+		HAL_Delay(1000);
+		if(f_mount(&mynewdiskFatFs, (TCHAR const*)mynewdiskPath, 0) == FR_OK)
+		{
+			clearScreen();
+			ssd1306_WriteString("Mounted", 1);
+			updateScreen();
+			HAL_Delay(1000);
+			if(f_open(&MyFile, "STM34.TXT", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+			{
+				clearScreen();
+				ssd1306_WriteString("Opened", 1);
+				updateScreen();
+				HAL_Delay(1000);
+				if(f_write(&MyFile, wtext, sizeof(wtext), (void *)&wbytes) == FR_OK)
+				{
+					clearScreen();
+					ssd1306_WriteString("Written", 1);
+					updateScreen();
+					HAL_Delay(1000);
+					f_close(&MyFile);
+					clearScreen();
+					ssd1306_WriteString("Closed", 1);
+					updateScreen();
+					HAL_Delay(1000);
+				}
+			}
+		}
+	}
+	FATFS_UnLinkDriver(mynewdiskPath);
+	clearScreen();
+	ssd1306_WriteString("Unlinked", 1);
+	updateScreen();
+	HAL_Delay(1000);
+}
+
 void ssd1306Init()
 {
 	HAL_Delay(100);
@@ -539,99 +573,6 @@ char ssd1306_WriteString(char* str, uint8_t color)
 	// Alles gelukt, we sturen dus 0 terug
 	return *str;
 }
-
-void testSD()
-{
-	uint32_t wbytes;
-	char wtext[550] = "TESTING...";
-	char display[40];
-	uint8_t test[4];
-	int resp;
-	char send[11] = "TESTING...";
-	send[10] = 0;
-	char sendChar = 'X';
-
-	for(uint16_t i = 10; i < 550; i++)
-	{
-		wtext[i] = (i % 26) + 65;
-	}
-	wtext[549] = 0;
-	if(FATFS_LinkDriver(&SD_Driver, mynewdiskPath) == 0)
-	{
-		clearScreen();
-		ssd1306_WriteString("Linked", 1);
-		updateScreen();
-		HAL_Delay(1000);
-		if(f_mount(&mynewdiskFatFs, (TCHAR const*)mynewdiskPath, 0) == FR_OK)
-		{
-			clearScreen();
-			ssd1306_WriteString("Mounted", 1);
-			updateScreen();
-			HAL_Delay(1000);
-			if(f_open(&MyFile, "STM33.TXT", FA_CREATE_ALWAYS | FA_WRITE /*FA_READ*/) == FR_OK)
-			{
-				clearScreen();
-				ssd1306_WriteString("Opened", 1);
-				updateScreen();
-				HAL_Delay(1000);
-				if(f_write(&MyFile, wtext, sizeof(wtext), (void *)&wbytes) == FR_OK)
-				/*clearScreen();*/
-				/*f_gets((TCHAR*)test, sizeof(test), &MyFile);*/
-				/*sprintf(display, "RESP: %d", resp);
-				ssd1306_WriteString(display, 1);
-				updateScreen();
-				HAL_Delay(1000);*/
-				/*if(resp == FR_OK)*/
-				/*if(fread(&MyFile, (void*)wtext, 4, &wbytes) == FR_OK)*/
-				{
-					/*resp = f_puts((TCHAR*)wtext, &MyFile);*/
-					/*resp = f_putc((TCHAR)sendChar, &MyFile);*/
-					/*resp = sd_write(0, (BYTE*)wtext, 17984, 1);
-					if(resp != RES_OK)
-					{
-						clearScreen();
-						ssd1306_WriteString("ERROR", 1);
-						updateScreen();
-						HAL_Delay(1000);
-					}
-					else
-					{
-						clearScreen();
-						/*sprintf(display, "Read %c%c%c", test[0], test[1], test[2]);*/
-						/*sprintf(display, "Wrote %d", resp);*/
-						/*ssd1306_WriteString(display, 1);*/
-						/*ssd1306_WriteString("WROTE", 1);
-						updateScreen();
-						HAL_Delay(1000);
-					}*/
-
-					fclose(&MyFile);
-					clearScreen();
-					ssd1306_WriteString("Closed", 1);
-					updateScreen();
-					HAL_Delay(1000);
-				}
-				/*fclose(&MyFile);
-				clearScreen();
-				ssd1306_WriteString("Closed", 1);
-				updateScreen();
-				HAL_Delay(1000);*/
-			}
-			else
-			{
-				clearScreen();
-				ssd1306_WriteString("failed", 1);
-				updateScreen();
-				HAL_Delay(1000);
-			}
-		}
-	}
-	FATFS_UnLinkDriver(mynewdiskPath);
-	clearScreen();
-	ssd1306_WriteString("Unlinked", 1);
-	updateScreen();
-}
-
 /* USER CODE END 4 */
 
 /**
