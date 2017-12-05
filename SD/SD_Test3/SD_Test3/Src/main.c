@@ -356,6 +356,7 @@ void sd_test()
 {
 	uint32_t wbytes; /* File write counts */
 	uint8_t wtext[] = "text to write logical disk"; /* File write buffer */
+	char line[5];
 
 	if(FATFS_LinkDriver(&SD_Driver, mynewdiskPath) == 0)
 	{
@@ -369,16 +370,19 @@ void sd_test()
 			ssd1306_WriteString("Mounted", 1);
 			updateScreen();
 			HAL_Delay(1000);
-			if(f_open(&MyFile, "STM34.TXT", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+			/*if(f_open(&MyFile, "STM34.TXT", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)*/
+			if(f_open(&MyFile, "STM34.TXT", FA_READ) == FR_OK)
 			{
 				clearScreen();
 				ssd1306_WriteString("Opened", 1);
 				updateScreen();
 				HAL_Delay(1000);
-				if(f_write(&MyFile, wtext, sizeof(wtext), (void *)&wbytes) == FR_OK)
-				{
+				/*if(f_write(&MyFile, wtext, sizeof(wtext), (void *)&wbytes) == FR_OK)*/
+				f_gets(line, sizeof(line), &MyFile);
+				/*{*/
 					clearScreen();
-					ssd1306_WriteString("Written", 1);
+					ssd1306_WriteString("Read", 1);
+					ssd1306_WriteString(line, 1);
 					updateScreen();
 					HAL_Delay(1000);
 					f_close(&MyFile);
@@ -386,7 +390,7 @@ void sd_test()
 					ssd1306_WriteString("Closed", 1);
 					updateScreen();
 					HAL_Delay(1000);
-				}
+				/*}*/
 			}
 		}
 	}
