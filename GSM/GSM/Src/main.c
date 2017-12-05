@@ -169,8 +169,13 @@ void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color);
 void ssd1306_WriteData(uint8_t* data, uint16_t count);
 char ssd1306_WriteChar(char ch, uint8_t color);
 char ssd1306_WriteString(char* str, uint8_t color);
-void executeCommand(char* command, uint8_t length, uint32_t timeout);
-void getSignalStrength();
+void executeCommand(char* command, char* rcvBuffer, char* search, uint32_t timeout);
+void connectNetwork();
+void connectServer();
+void serverComm(char* send, char* receive);
+void switchCmdMode();
+void closeServer();
+
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -181,7 +186,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  char rcvBuffer[80] = "";
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -208,54 +213,28 @@ int main(void)
   /* USER CODE BEGIN 2 */
   ssd1306Init();
 
-  HAL_Delay(20000);
-  /*executeCommand("AT+CPIN?\r", 8);*/
-  executeCommand("AT+CSQ\r", 7, 500);
-  executeCommand("AT+CREG?\r", 9, 500);
-  executeCommand("AT+CGATT?\r", 10, 500);
-  executeCommand("AT+CIPMODE=1\r", 13, 2000);
-  /*executeCommand("AT+CIPMUX=0\r", 12, 500);
-  executeCommand("AT+CIPSTATUS\r", 13, 500);*/
-  /*executeCommand("AT+CGDCONT=1,\"IP\",\"wholesale\"\r", 30, 500);*/
-  /*executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 20000);
-  executeCommand("AT+CIPSEND\r", 11, 500);*/
-  executeCommand("AT+CSTT=\"wholesale\"\r", 20, 500);
-  executeCommand("AT+CIPSTATUS\r", 13, 500);
-  /*executeCommand("AT+CGACT=1,1\r", 13, 500);
-  executeCommand("AT+CIPSTATUS\r", 13, 500);*/
-  executeCommand("AT+CIICR\r", 9, 5000);
-  executeCommand("AT+CIPSTATUS\r", 13, 500);
-  executeCommand("AT+CIFSR\r", 9, 500);
-  executeCommand("AT+CIPSTATUS\r", 13, 500);
-  /*HAL_Delay(5000);*/
-  /*executeCommand("AT+CIICR\r", 9, 20000);
-  executeCommand("AT+CIFSR\r", 9, 500);*/
-  executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 5000);
-  /*executeCommand("AT+CIPSEND\r", 11, 500);*/
-  executeCommand("TEST", 4, 2000);
-  HAL_Delay(1000);
-  executeCommand("+++", 3, 500);
-  HAL_Delay(1000);
-  executeCommand("AT+CIPCLOSE\r", 12, 2000);
+  HAL_Delay(2000);
+
+  connectServer();
+  serverComm("TEST", rcvBuffer);
+  switchCmdMode();
+  executeCommand("AT+SAPBR=3,1,\"Contype\", \"GPRS\"\r", rcvBuffer, "OK", 1000);
+  executeCommand("AT+SAPBR=3,1,\"APN\", \"wholesale\"\r", rcvBuffer, "OK", 1000);
+  executeCommand("AT+SAPBR=1,1\r", rcvBuffer, "OK", 1000);
+  executeCommand("AT+SAPBR=2,1\r", rcvBuffer, "", 1000);
+  executeCommand("AT+CIPGSMLOC=1,1\r", rcvBuffer, "", 3000);
+  executeCommand("AT+CCLK?\r", rcvBuffer, "", 3000);
+
+  closeServer();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  /* USER CODE END WHILE */
-	  /*HAL_Delay(2000);
-	  executeCommand("AT+CSQ\r", 7);
-	  /*getSignalStrength();*/
-	  /*currentX = 0;
-	  currentY = 0;*/
-	  /*executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", 41, 5000);*/
-	  /*executeCommand("AT+CREG?\r", 9, 500);*/
-  /* USER CODE BEGIN 3 */
 
   }
-  /* USER CODE END 3 */
-
+  /* USER CODE END WHILE */
 }
 
 /** System Clock Configuration
@@ -454,6 +433,8 @@ void clearScreen()
 		screen[i] = 0x00;
 	}
 	updateScreen();
+	currentX = 0;
+	currentY = 0;
 }
 
 void updateScreen()
@@ -571,41 +552,64 @@ char ssd1306_WriteString(char* str, uint8_t color)
 	return *str;
 }
 
-void getSignalStrength()
+void connectNetwork()
 {
-	uint8_t xmitBuffer[10] = "AT+CSQ\r";
-	uint8_t rcvBuffer[50];
-
-	for(uint8_t i = 0; i < 50; i++)
-	{
-		rcvBuffer[i] = 0;
-	}
-
-	HAL_UART_Transmit(&huart4, xmitBuffer, 7, 50);
-	HAL_UART_Receive(&huart4, rcvBuffer, 50, 500);
-
-	ssd1306_WriteString((char*)rcvBuffer, 1);
-	updateScreen();
+	char rcvBuffer[80] = "";
+	executeCommand("AT+CREG?\r", rcvBuffer, "+CREG: 0,1", 500);
+	executeCommand("AT+CGATT?\r", rcvBuffer, "+CGATT: 1", 500);
 }
 
-void executeCommand(char* command, uint8_t length, uint32_t timeout)
+void connectServer()
 {
-	uint8_t rcvBuffer[80];
+	char rcvBuffer[80] = "";
+	connectNetwork();
+	executeCommand("AT+CIPMODE=1\r", rcvBuffer, "OK", 500);
+	executeCommand("AT+CSTT=\"wholesale\"\r", rcvBuffer, "OK", 500);
+	executeCommand("AT+CIICR\r", rcvBuffer, "OK", 2000);
+	executeCommand("AT+CIFSR\r", rcvBuffer, "", 500);
+	executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", rcvBuffer, "CONNECT", 2000);
+}
 
-	HAL_Delay(2000);
-	clearScreen();
-	currentX = 0;
-	currentY = 0;
-	for(uint8_t i = 0; i < 50; i++)
+void serverComm(char* send, char* receive)
+{
+	executeCommand(send, receive, "", 2000);
+}
+
+void switchCmdMode()
+{
+	char rcvBuffer[80] = "";
+	HAL_Delay(1000);
+	executeCommand("+++", rcvBuffer, "", 500);
+	HAL_Delay(1000);
+}
+
+switchDataMode()
+{
+
+}
+
+void closeServer()
+{
+	char rcvBuffer[80] = "";
+	executeCommand("AT+CIPCLOSE\r", rcvBuffer, "CLOSE OK", 1000);
+}
+
+void executeCommand(char* command, char* rcvBuffer, char* search, uint32_t timeout)
+{
+	uint8_t length = strlen(command);
+	do
 	{
-		rcvBuffer[i] = 0;
-	}
+		for(uint8_t i = 0; i < 50; i++)
+		{
+			rcvBuffer[i] = 0;
+		}
 
-	HAL_UART_Transmit(&huart4, (uint8_t*)command, length, 50);
-	HAL_UART_Receive(&huart4, rcvBuffer, 80, timeout);
-
-	ssd1306_WriteString((char*)rcvBuffer, 1);
-	updateScreen();
+		HAL_UART_Transmit(&huart4, (uint8_t*)command, length, 50);
+		HAL_UART_Receive(&huart4, (uint8_t*)rcvBuffer, 80, timeout);
+		clearScreen();
+		ssd1306_WriteString(rcvBuffer, 1);
+		updateScreen();
+	}while(strstr(rcvBuffer, search) == NULL);
 }
 /* USER CODE END 4 */
 
