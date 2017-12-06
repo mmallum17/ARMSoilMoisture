@@ -39,6 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l1xx_hal.h"
+#include "gsm.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -169,13 +170,6 @@ void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color);
 void ssd1306_WriteData(uint8_t* data, uint16_t count);
 char ssd1306_WriteChar(char ch, uint8_t color);
 char ssd1306_WriteString(char* str, uint8_t color);
-void executeCommand(char* command, char* rcvBuffer, char* search, uint32_t timeout);
-void connectNetwork();
-void connectServer();
-void serverComm(char* send, char* receive);
-void switchCmdMode();
-void closeServer();
-
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -550,61 +544,6 @@ char ssd1306_WriteString(char* str, uint8_t color)
 
 	// Alles gelukt, we sturen dus 0 terug
 	return *str;
-}
-
-void connectNetwork()
-{
-	char rcvBuffer[80] = "";
-	executeCommand("AT+CREG?\r", rcvBuffer, "+CREG: 0,1", 500);
-	executeCommand("AT+CGATT?\r", rcvBuffer, "+CGATT: 1", 500);
-}
-
-void connectServer()
-{
-	char rcvBuffer[80] = "";
-	connectNetwork();
-	executeCommand("AT+CIPMODE=1\r", rcvBuffer, "OK", 500);
-	executeCommand("AT+CSTT=\"wholesale\"\r", rcvBuffer, "OK", 500);
-	executeCommand("AT+CIICR\r", rcvBuffer, "OK", 2000);
-	executeCommand("AT+CIFSR\r", rcvBuffer, "", 500);
-	executeCommand("AT+CIPSTART=\"TCP\",\"18.221.30.192\",\"3000\"\r", rcvBuffer, "CONNECT", 2000);
-}
-
-void serverComm(char* send, char* receive)
-{
-	executeCommand(send, receive, "", 2000);
-}
-
-void switchCmdMode()
-{
-	char rcvBuffer[80] = "";
-	HAL_Delay(1000);
-	executeCommand("+++", rcvBuffer, "", 500);
-	HAL_Delay(1000);
-}
-
-void closeServer()
-{
-	char rcvBuffer[80] = "";
-	executeCommand("AT+CIPCLOSE\r", rcvBuffer, "CLOSE OK", 1000);
-}
-
-void executeCommand(char* command, char* rcvBuffer, char* search, uint32_t timeout)
-{
-	uint8_t length = strlen(command);
-	do
-	{
-		for(uint8_t i = 0; i < 50; i++)
-		{
-			rcvBuffer[i] = 0;
-		}
-
-		HAL_UART_Transmit(&huart4, (uint8_t*)command, length, 50);
-		HAL_UART_Receive(&huart4, (uint8_t*)rcvBuffer, 80, timeout);
-		clearScreen();
-		ssd1306_WriteString(rcvBuffer, 1);
-		updateScreen();
-	}while(strstr(rcvBuffer, search) == NULL);
 }
 /* USER CODE END 4 */
 
