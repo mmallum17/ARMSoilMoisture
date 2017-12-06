@@ -39,6 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l1xx_hal.h"
+#include <math.h>
 
 /* USER CODE BEGIN Includes */
 
@@ -170,7 +171,10 @@ void ssd1306_WriteData(uint8_t* data, uint16_t count);
 char ssd1306_WriteChar(char ch, uint8_t color);
 char ssd1306_WriteString(char* str, uint8_t color);
 void sensorTransmit();
-void sensorReceive();
+void sensorReceive(APIResponseFrame* samplesFrame);
+float toCelsius(uint16_t tempSample);
+float toFahrenheit(float celsius);
+void floatToString(float value, char* floatString, int afterpoint);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -181,8 +185,12 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  uint8_t test = 1;
-  char buffer[50];
+  char display[30];
+  APIResponseFrame samplesFrame;
+  float celsius = 0;
+  float fahrenheit = 0;
+  char celsiusString[10];
+  char fahrenheitString[10];
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -211,8 +219,10 @@ int main(void)
   ssd1306_WriteString(buffer, 1);
   updateScreen();*/
   ssd1306Init();
-  sensorTransmit();
-  sensorReceive();
+
+  sensorReceive(&samplesFrame);
+  HAL_Delay(1000);
+  clearScreen();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -220,7 +230,17 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-
+	  sensorTransmit();
+	  sensorReceive(&samplesFrame);
+	  celsius = toCelsius(samplesFrame.temperatureSample);
+	  fahrenheit = toFahrenheit(celsius);
+	  floatToString(celsius, celsiusString, 2);
+	  floatToString(fahrenheit, fahrenheitString, 2);
+	  HAL_Delay(1000);
+	  clearScreen();
+	  sprintf(display, "%d %d %d %sC %sF", samplesFrame.digitalSample, samplesFrame.moistureSample, samplesFrame.temperatureSample, celsiusString, fahrenheitString);
+	  ssd1306_WriteString(display, 1);
+	  updateScreen();
   /* USER CODE BEGIN 3 */
 
   }
@@ -404,6 +424,8 @@ void clearScreen()
 		screen[i] = 0x00;
 	}
 	updateScreen();
+	currentX = 0;
+	currentY = 0;
 }
 
 void updateScreen()
@@ -460,36 +482,46 @@ char ssd1306_WriteChar(char ch, uint8_t color)
 {
 	uint32_t i, b, j;
 
-	// Check bounds of LCD
-	if (128 <= (currentX + 7) ||
-		64 <= (currentY + 10))
-	{
-		// Er is geen plaats meer
-		return 0;
-	}
-
-	// We gaan door het font
-	for (i = 0; i < 10; i++)
-	{
-		b = Font7x10[(ch - 32) * 10 + i];
-		for (j = 0; j < 7; j++)
+		// Check bounds of LCD
+		if(128 <= (currentX + 7))
 		{
-			if ((b << j) & 0x8000)
+			currentX = 0;
+			currentY += 11;
+		}
+		if(64 <= (currentY + 10))
+		{
+			currentX = 0;
+			currentY = 0;
+		}
+		/*if (128 <= (currentX + 7) ||
+			64 <= (currentY + 10))
+		{
+			// Er is geen plaats meer
+			return 0;
+		}*/
+
+		// We gaan door het font
+		for (i = 0; i < 10; i++)
+		{
+			b = Font7x10[(ch - 32) * 10 + i];
+			for (j = 0; j < 7; j++)
 			{
-				ssd1306_DrawPixel(currentX + j, (currentY + i), color);
-			}
-			else
-			{
-				ssd1306_DrawPixel(currentX + j, (currentY + i), !color);
+				if ((b << j) & 0x8000)
+				{
+					ssd1306_DrawPixel(currentX + j, (currentY + i), color);
+				}
+				else
+				{
+					ssd1306_DrawPixel(currentX + j, (currentY + i), !color);
+				}
 			}
 		}
-	}
 
-	// De huidige positie is nu verplaatst
-	currentX += 7;
+		// De huidige positie is nu verplaatst
+		currentX += 7;
 
-	// We geven het geschreven char terug voor validatie
-	return ch;
+		// We geven het geschreven char terug voor validatie
+		return ch;
 }
 
 char ssd1306_WriteString(char* str, uint8_t color)
@@ -527,31 +559,73 @@ void sensorTransmit()
 	updateScreen();*/
 }
 
-void sensorReceive()
+void sensorReceive(APIResponseFrame* samplesFrame)
 {
-	char display[10];
-	uint8_t buffer[29];
+	uint8_t buffer[28];
 	uint8_t i;
 
-	for(i = 0; i < 29; i++)
+	for(i = 0; i < sizeof(buffer); i++)
 	{
 		buffer[i] = 0;
 	}
-	HAL_UART_Receive(&huart2, buffer, 29, 1000);
-	for(i = 0; i < 29; i++)
-	{
-		sprintf(display, "%02X ", buffer[i]);
-		ssd1306_WriteString(display, 1);
-		if(i % 6 == 5)
+	HAL_UART_Receive(&huart2, buffer, sizeof(buffer), 1000);
+
+	samplesFrame->startDelimiter = buffer[0];
+	samplesFrame->length = (buffer[1] << 8) | buffer[2];
+	samplesFrame->frameType = buffer[3];
+	samplesFrame->frameId = buffer[4];
+	samplesFrame->sourceAddress64 = ((uint64_t)buffer[5] << 56) | ((uint64_t)buffer[6] << 48) | ((uint64_t)buffer[7] << 40) | ((uint64_t)buffer[8] << 32) | ((uint64_t)buffer[9] << 24) | ((uint64_t)buffer[10] << 16) | ((uint64_t)buffer[11] << 8) | buffer[12];
+	samplesFrame->sourceAddress16 = (buffer[13] << 8) | buffer[14];
+	samplesFrame->remoteCommand = (buffer[15] << 8) | buffer[16];
+	samplesFrame->status = buffer[17];
+	samplesFrame->samples = buffer[18];
+	samplesFrame->analogMask = buffer[19];
+	samplesFrame->digitalMask = buffer[20];
+	samplesFrame->digitalSample = (buffer[21] << 8) | buffer[22];
+	samplesFrame->moistureSample = (buffer[23] << 8) | buffer[24];
+	samplesFrame->temperatureSample = (buffer[25] << 8) | buffer[26];
+	samplesFrame->checksum = buffer[27];
+	/*if(test++)
+	{*/
+		/*for(i = 0; i < sizeof(buffer); i++)
 		{
-			currentY += 11;
-			currentX = 0;
-		}
-	}
+			sprintf(display, "%02X ", buffer[i]);
+			ssd1306_WriteString(display, 1);
+			if(i % 6 == 5)
+			{
+				currentY += 11;
+				currentX = 0;
+			}
+		}*/
+		/*sprintf(display, "%d %d %d", samplesFrame->digitalSample, samplesFrame->moistureSample, samplesFrame->temperatureSample);
+		ssd1306_WriteString(display, 1);
+		updateScreen();
+	}*/
+
 	/*ssd1306_WriteString("TEST", 1);*/
-	updateScreen();
 
 }
+
+float toCelsius(uint16_t tempSample)
+{
+	return ((float)tempSample / 1023 * 3.3 - 1.8663) * 1000 / -11.69;
+}
+
+float toFahrenheit(float celsius)
+{
+	return celsius * 9 / 5 + 32;
+}
+
+void floatToString(float value, char* floatString, int afterpoint)
+{
+	uint32_t intValue = value;
+	float tmpFrac = value - intValue;
+	uint32_t intFrac = trunc(tmpFrac * pow(10, afterpoint));
+
+	sprintf(floatString, "%lu.%lu", intValue, intFrac);
+}
+
+
 /* USER CODE END 4 */
 
 /**

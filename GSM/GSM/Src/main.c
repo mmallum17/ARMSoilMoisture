@@ -583,11 +583,6 @@ void switchCmdMode()
 	HAL_Delay(1000);
 }
 
-switchDataMode()
-{
-
-}
-
 void closeServer()
 {
 	char rcvBuffer[80] = "";
