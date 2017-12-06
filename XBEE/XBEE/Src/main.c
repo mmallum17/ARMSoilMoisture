@@ -39,7 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l1xx_hal.h"
-#include <math.h>
+#include <xbee.h>
 
 /* USER CODE BEGIN Includes */
 
@@ -170,11 +170,6 @@ void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color);
 void ssd1306_WriteData(uint8_t* data, uint16_t count);
 char ssd1306_WriteChar(char ch, uint8_t color);
 char ssd1306_WriteString(char* str, uint8_t color);
-void sensorTransmit();
-void sensorReceive(APIResponseFrame* samplesFrame);
-float toCelsius(uint16_t tempSample);
-float toFahrenheit(float celsius);
-void floatToString(float value, char* floatString, int afterpoint);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -215,21 +210,14 @@ int main(void)
   MX_USART2_UART_Init();
 
   /* USER CODE BEGIN 2 */
-  /*sprintf(buffer, "Test %d", test);
-  ssd1306_WriteString(buffer, 1);
-  updateScreen();*/
   ssd1306Init();
-
-  sensorReceive(&samplesFrame);
-  HAL_Delay(1000);
-  clearScreen();
+  initXbee();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  /* USER CODE END WHILE */
 	  sensorTransmit();
 	  sensorReceive(&samplesFrame);
 	  celsius = toCelsius(samplesFrame.temperatureSample);
@@ -241,11 +229,8 @@ int main(void)
 	  sprintf(display, "%d %d %d %sC %sF", samplesFrame.digitalSample, samplesFrame.moistureSample, samplesFrame.temperatureSample, celsiusString, fahrenheitString);
 	  ssd1306_WriteString(display, 1);
 	  updateScreen();
-  /* USER CODE BEGIN 3 */
-
   }
-  /* USER CODE END 3 */
-
+  /* USER CODE END WHILE */
 }
 
 /** System Clock Configuration
@@ -406,7 +391,6 @@ void ssd1306Init()
 	ssd1306WriteCommand(0xAF);
 	HAL_Delay(100);
 	clearScreen();
-	/*updateScreen();*/
 }
 
 void ssd1306WriteCommand(uint8_t command)
@@ -438,8 +422,6 @@ void updateScreen()
 
 		ssd1306_WriteData(&screen[i * 128], 128);
 	}
-	/*HAL_Delay(10000);
-	ssd1306WriteCommand(0xAE);*/
 }
 
 void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color)
@@ -449,11 +431,6 @@ void ssd1306_DrawPixel(uint16_t x, uint16_t y, uint8_t color)
 		/* Error */
 		return;
 	}
-
-	/* Check if pixels are inverted
-	if (SSD1306.Inverted) {
-		color = (SSD1306_COLOR_t)!color;
-	}*/
 
 	/* Set color */
 	if (color == 0x01)
@@ -493,12 +470,6 @@ char ssd1306_WriteChar(char ch, uint8_t color)
 			currentX = 0;
 			currentY = 0;
 		}
-		/*if (128 <= (currentX + 7) ||
-			64 <= (currentY + 10))
-		{
-			// Er is geen plaats meer
-			return 0;
-		}*/
 
 		// We gaan door het font
 		for (i = 0; i < 10; i++)
@@ -542,90 +513,6 @@ char ssd1306_WriteString(char* str, uint8_t color)
 	// Alles gelukt, we sturen dus 0 terug
 	return *str;
 }
-
-void sensorTransmit()
-{
-	/*char display[10];
-	uint8_t i;*/
-	uint8_t buffer[19] = {0x7E, 0x00, 0x0F, 0x17, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					 0x00, 0x00, 0x00, 0x02, 0x49, 0x53, 0x49};
-	/*ssd1306_WriteString("TEST", 1);*/
-	HAL_UART_Transmit(&huart2, buffer, 19, 50);
-	/*for(i = 0; i < 4; i++)
-	{
-			sprintf(display, "%02X ", buffer[i]);
-			ssd1306_WriteString(display, 1);
-	}
-	updateScreen();*/
-}
-
-void sensorReceive(APIResponseFrame* samplesFrame)
-{
-	uint8_t buffer[28];
-	uint8_t i;
-
-	for(i = 0; i < sizeof(buffer); i++)
-	{
-		buffer[i] = 0;
-	}
-	HAL_UART_Receive(&huart2, buffer, sizeof(buffer), 1000);
-
-	samplesFrame->startDelimiter = buffer[0];
-	samplesFrame->length = (buffer[1] << 8) | buffer[2];
-	samplesFrame->frameType = buffer[3];
-	samplesFrame->frameId = buffer[4];
-	samplesFrame->sourceAddress64 = ((uint64_t)buffer[5] << 56) | ((uint64_t)buffer[6] << 48) | ((uint64_t)buffer[7] << 40) | ((uint64_t)buffer[8] << 32) | ((uint64_t)buffer[9] << 24) | ((uint64_t)buffer[10] << 16) | ((uint64_t)buffer[11] << 8) | buffer[12];
-	samplesFrame->sourceAddress16 = (buffer[13] << 8) | buffer[14];
-	samplesFrame->remoteCommand = (buffer[15] << 8) | buffer[16];
-	samplesFrame->status = buffer[17];
-	samplesFrame->samples = buffer[18];
-	samplesFrame->analogMask = buffer[19];
-	samplesFrame->digitalMask = buffer[20];
-	samplesFrame->digitalSample = (buffer[21] << 8) | buffer[22];
-	samplesFrame->moistureSample = (buffer[23] << 8) | buffer[24];
-	samplesFrame->temperatureSample = (buffer[25] << 8) | buffer[26];
-	samplesFrame->checksum = buffer[27];
-	/*if(test++)
-	{*/
-		/*for(i = 0; i < sizeof(buffer); i++)
-		{
-			sprintf(display, "%02X ", buffer[i]);
-			ssd1306_WriteString(display, 1);
-			if(i % 6 == 5)
-			{
-				currentY += 11;
-				currentX = 0;
-			}
-		}*/
-		/*sprintf(display, "%d %d %d", samplesFrame->digitalSample, samplesFrame->moistureSample, samplesFrame->temperatureSample);
-		ssd1306_WriteString(display, 1);
-		updateScreen();
-	}*/
-
-	/*ssd1306_WriteString("TEST", 1);*/
-
-}
-
-float toCelsius(uint16_t tempSample)
-{
-	return ((float)tempSample / 1023 * 3.3 - 1.8663) * 1000 / -11.69;
-}
-
-float toFahrenheit(float celsius)
-{
-	return celsius * 9 / 5 + 32;
-}
-
-void floatToString(float value, char* floatString, int afterpoint)
-{
-	uint32_t intValue = value;
-	float tmpFrac = value - intValue;
-	uint32_t intFrac = trunc(tmpFrac * pow(10, afterpoint));
-
-	sprintf(floatString, "%lu.%lu", intValue, intFrac);
-}
-
-
 /* USER CODE END 4 */
 
 /**
