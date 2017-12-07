@@ -2,6 +2,6 @@
   "name": "TCP_SERVER",
   "version": "0.0.1",
   "dependencies": {
-    
+    "mongodb": "^2.2.33"
   }
 }

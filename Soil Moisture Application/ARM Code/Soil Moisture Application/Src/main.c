@@ -151,6 +151,7 @@ int main(void)
 	  ssd1306_WriteString(display, 1);
 	  updateScreen();
 	  f_write(&MyFile, display, sizeof(display), (void *)&wbytes);
+	  f_putc('\n', &MyFile);
 	  /*f_write(&MyFile, "\n", 1, (void *)&wbytes);*/
 	  serverComm(display, rcvBuffer);
   }
