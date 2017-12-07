@@ -15,6 +15,14 @@ app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/stream', function(req, res){
+    res.sendFile(__dirname + '/stream.html');
+});
+
+app.get('/alldata', function(req, res){
+    res.sendFile(__dirname + '/alldata.html');
+});
+
 app.get('/data', function(req, res){
     MongoClient.connect(url, function(err, db){
         if(err){
