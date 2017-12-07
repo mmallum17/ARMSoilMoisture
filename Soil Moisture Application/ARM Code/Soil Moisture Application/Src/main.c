@@ -147,10 +147,11 @@ int main(void)
 	  floatToString(fahrenheit, fahrenheitString, 2);
 	  /*HAL_Delay(1000);*/
 	  clearScreen();
-	  sprintf(display, "%d %d %d %sC %sF", samplesFrame.digitalSample, samplesFrame.moistureSample, samplesFrame.temperatureSample, celsiusString, fahrenheitString);
+	  sprintf(display,"%d,%s", samplesFrame.moistureSample, celsiusString);
 	  ssd1306_WriteString(display, 1);
 	  updateScreen();
-	  f_write(&MyFile, display, sizeof(display), (void *)&wbytes);
+	  /*f_write(&MyFile, display, strlen(display), (void *)&wbytes);*/
+	  f_puts(display, &MyFile);
 	  f_putc('\n', &MyFile);
 	  /*f_write(&MyFile, "\n", 1, (void *)&wbytes);*/
 	  serverComm(display, rcvBuffer);
