@@ -7,7 +7,8 @@
 </head>
 <body>
 Hello World
-<div id="graph"></div>
+<div id="moistureGraph"></div>
+<div id="temperatureGraph"></div>
 <p id="data"></p>
 </body>
 <!--<script src="graph.js"></script>-->
@@ -16,7 +17,7 @@ Hello World
         return Math.random();
     }
 
-    var layout = {
+    var tempLayout = {
         title: 'Temperature',
         xaxis: {
             title: 'Time',
@@ -35,73 +36,73 @@ Hello World
             }
         }
     };
-    var lastDate;
-    function stream(){
-        var xhttp = new XMLHttpRequest();
-        xhttp.open("GET", "http://18.221.30.192/newdata?date="+lastDate, true);
-        xhttp.onreadystatechange = function(){
-            if(xhttp.readyState === 4 && xhttp.status === 200){
+    var tempLastDate;
+    function tempStream(){
+        var tempXhttp = new XMLHttpRequest();
+        tempXhttp.open("GET", "http://18.221.30.192/new-temp-data?date="+tempLastDate, true);
+        tempXhttp.onreadystatechange = function(){
+            if(tempXhttp.readyState === 4 && tempXhttp.status === 200){
                 /*lastDate = new Date().toISOString();*/
-                var records = JSON.parse(xhttp.responseText);
-                /*document.getElementById("data").innerHTML = records;*/
-                if(records.length !== 0){
-                    lastDate = new Date().toISOString();
+                var tempRecords = JSON.parse(tempXhttp.responseText);
+                /*document.getElementById("data").innerHTML = tempRecords;*/
+                if(tempRecords.length !== 0){
+                    tempLastDate = new Date().toISOString();
                     var tempsZero = [];
-                    var timesZero = [];
+                    var tempTimesZero = [];
                     var tempsOne = [];
-                    var timesOne = [];
+                    var tempTimesOne = [];
                     var tempsTwo = [];
-                    var timesTwo = [];
-                    for(var i = 0; i < records.length; i++){
-                        switch(records[i].sensor) {
+                    var tempTimesTwo = [];
+                    for(var i = 0; i < tempRecords.length; i++){
+                        switch(tempRecords[i].sensor) {
                             case 0:
-                                tempsZero.push(records[i].value);
-                                timesZero.push(records[i].date);
+                                tempsZero.push(tempRecords[i].value);
+                                tempTimesZero.push(tempRecords[i].date);
                                 break;
                             case 1:
-                                tempsOne.push(records[i].value);
-                                timesOne.push(records[i].date);
+                                tempsOne.push(tempRecords[i].value);
+                                tempTimesOne.push(tempRecords[i].date);
                                 break;
                             case 2:
-                                tempsTwo.push(records[i].value);
-                                timesTwo.push(records[i].date);
+                                tempsTwo.push(tempRecords[i].value);
+                                tempTimesTwo.push(tempRecords[i].date);
                                 break;
 
                         }
                     }
 
-                    var update;
+                    var tempUpdate;
                     if(tempsZero.length !== 0){
-                        update = {
-                            x: [timesZero],
+                        tempUpdate = {
+                            x: [tempTimesZero],
                             y: [tempsZero]
                         };
-                        Plotly.extendTraces('graph', update, [0]);
+                        Plotly.extendTraces('temperatureGraph', tempUpdate, [0]);
                     }
                     if(tempsOne.length !== 0){
-                        update = {
-                            x: [timesOne],
+                        tempUpdate = {
+                            x: [tempTimesOne],
                             y: [tempsOne]
                         };
-                        Plotly.extendTraces('graph', update, [1]);
+                        Plotly.extendTraces('temperatureGraph', tempUpdate, [1]);
                     }
                     if(tempsTwo.length !== 0){
-                        update = {
-                            x: [timesTwo],
+                        tempUpdate = {
+                            x: [tempTimesTwo],
                             y: [tempsTwo]
                         };
-                        Plotly.extendTraces('graph', update, [2]);
+                        Plotly.extendTraces('temperatureGraph', tempUpdate, [2]);
                     }
-                    /*document.getElementById("data").innerHTML = temps + " " + times;*/
-                    /*var update = {
-                        x: [times],
+                    /*document.getElementById("data").innerHTML = temps + " " + tempTimes;*/
+                    /*var tempUpdate = {
+                        x: [tempTimes],
                         y: [temps]
                     };
-                    Plotly.extendTraces('graph', update, [0]);*/
+                    Plotly.extendTraces('graph', tempUpdate, [0]);*/
                 }
             }
         };
-        xhttp.send();
+        tempXhttp.send();
 
         /*var dates = [new Date(), new Date(), new Date()];
         var values = [30, 15, 25];
@@ -118,33 +119,32 @@ Hello World
         line: {color: '#80CAF6'}
     }]);*/
 
-    var cnt = 0;
-    var xhttp = new XMLHttpRequest();
-    xhttp.open("GET", "http://18.221.30.192/lastdata", true);
-    xhttp.onreadystatechange = function(){
-        if(xhttp.readyState == 4 && xhttp.status == 200){
+    var tempXhttp = new XMLHttpRequest();
+    tempXhttp.open("GET", "http://18.221.30.192/last-temp-data", true);
+    tempXhttp.onreadystatechange = function(){
+        if(tempXhttp.readyState == 4 && tempXhttp.status == 200){
             /*lastDate = new Date("2017-12-07T22:55:25.754Z").toISOString();*/
-            lastDate = new Date().toISOString();
-            /*console.log(xhttp.responseText);*/
-            var records = JSON.parse(xhttp.responseText);
+            tempLastDate = new Date().toISOString();
+            /*console.log(tempXhttp.responseText);*/
+            var tempRecords = JSON.parse(tempXhttp.responseText);
             var tempsZero = [];
-            var timesZero = [];
+            var tempTimesZero = [];
             var tempsOne = [];
-            var timesOne = [];
+            var tempTimesOne = [];
             var tempsTwo = [];
-            var timesTwo = [];
-            for(var i = 0; i < records[0].length; i++){
-                tempsZero.push(records[0][i].value);
-                timesZero.push(records[0][i].date);
-                tempsOne.push(records[1][i].value);
-                timesOne.push(records[1][i].date);
-                tempsTwo.push(records[2][i].value);
-                timesTwo.push(records[2][i].date);
+            var tempTimesTwo = [];
+            for(var i = 0; i < tempRecords[0].length; i++){
+                tempsZero.push(tempRecords[0][i].value);
+                tempTimesZero.push(tempRecords[0][i].date);
+                tempsOne.push(tempRecords[1][i].value);
+                tempTimesOne.push(tempRecords[1][i].date);
+                tempsTwo.push(tempRecords[2][i].value);
+                tempTimesTwo.push(tempRecords[2][i].date);
             }
 
             /*var time = new Date();*/
-            var sensorZeroTrace = {
-                x: timesZero,
+            var tempZeroTrace = {
+                x: tempTimesZero,
                 y: tempsZero,
                 mode: 'lines+markers',
                 type: 'scatter',
@@ -153,8 +153,8 @@ Hello World
                 /*line: {color: '#80CAF6'}*/
             };
 
-            var sensorOneTrace = {
-                x: timesOne,
+            var tempOneTrace = {
+                x: tempTimesOne,
                 y: tempsOne,
                 mode: 'lines+markers',
                 type: 'scatter',
@@ -163,9 +163,167 @@ Hello World
                 /*line: {color: '#80CAF6'}*/
             };
 
-            var sensorTwoTrace = {
-                x: timesTwo,
+            var tempTwoTrace = {
+                x: tempTimesTwo,
                 y: tempsTwo,
+                mode: 'lines+markers',
+                type: 'scatter',
+                name: 'Sensor Two'
+                /*mode: 'lines',*/
+                /*line: {color: '#80CAF6'}*/
+            };
+
+            var allTraces = [tempZeroTrace, tempOneTrace, tempTwoTrace];
+            Plotly.plot('temperatureGraph', allTraces, tempLayout);
+
+            var interval = setInterval(tempStream, 1000);
+            document.getElementById("data").innerHTML = tempRecords[0].value + " " + tempRecords.length;
+        }
+    };
+    tempXhttp.send();
+
+
+
+    var moistLayout = {
+        title: 'Soil Moisture',
+        xaxis: {
+            title: 'Time',
+            titlefont: {
+                family: 'Courier New, monospace',
+                size: 18,
+                color: '#7f7f7f'
+            }
+        },
+        yaxis: {
+            title: 'Moisture',
+            titlefont: {
+                family: 'Courier New, monospace',
+                size: 18,
+                color: '#7f7f7f'
+            }
+        }
+    };
+
+    var moistLastDate;
+    function moistStream(){
+        var moistXhttp = new XMLHttpRequest();
+        moistXhttp.open("GET", "http://18.221.30.192/new-moist-data?date="+moistLastDate, true);
+        moistXhttp.onreadystatechange = function(){
+            if(moistXhttp.readyState === 4 && moistXhttp.status === 200){
+                /*lastDate = new Date().toISOString();*/
+                var moistRecords = JSON.parse(moistXhttp.responseText);
+                /*document.getElementById("data").innerHTML = moistRecords;*/
+                if(moistRecords.length !== 0){
+                    moistLastDate = new Date().toISOString();
+                    var moistZero = [];
+                    var moistTimesZero = [];
+                    var moistOne = [];
+                    var moistTimesOne = [];
+                    var moistTwo = [];
+                    var moistTimesTwo = [];
+                    for(var i = 0; i < moistRecords.length; i++){
+                        switch(moistRecords[i].sensor) {
+                            case 0:
+                                moistZero.push(moistRecords[i].value);
+                                moistTimesZero.push(moistRecords[i].date);
+                                break;
+                            case 1:
+                                moistOne.push(moistRecords[i].value);
+                                moistTimesOne.push(moistRecords[i].date);
+                                break;
+                            case 2:
+                                moistTwo.push(moistRecords[i].value);
+                                moistTimesTwo.push(moistRecords[i].date);
+                                break;
+
+                        }
+                    }
+
+                    var moistUpdate;
+                    if(moistZero.length !== 0){
+                        moistUpdate = {
+                            x: [moistTimesZero],
+                            y: [moistZero]
+                        };
+                        Plotly.extendTraces('moistureGraph', moistUpdate, [0]);
+                    }
+                    if(moistOne.length !== 0){
+                        moistUpdate = {
+                            x: [moistTimesOne],
+                            y: [moistOne]
+                        };
+                        Plotly.extendTraces('moistureGraph', moistUpdate, [1]);
+                    }
+                    if(moistTwo.length !== 0){
+                        moistUpdate = {
+                            x: [moistTimesTwo],
+                            y: [moistTwo]
+                        };
+                        Plotly.extendTraces('moistureGraph', moistUpdate, [2]);
+                    }
+                    /*document.getElementById("data").innerHTML = temps + " " + tempTimes;*/
+                    /*var tempUpdate = {
+                        x: [tempTimes],
+                        y: [temps]
+                    };
+                    Plotly.extendTraces('graph', tempUpdate, [0]);*/
+                }
+            }
+        };
+        moistXhttp.send();
+
+        /*var dates = [new Date(), new Date(), new Date()];
+        var values = [30, 15, 25];
+
+        var update = {
+            x: [dates],
+            y: [values]
+        };
+        Plotly.extendTraces('graph', update, [0]);*/
+    }
+    /*Plotly.plot('graph', [{
+        y: [1,2,3].map(rand),
+        mode: 'lines',
+        line: {color: '#80CAF6'}
+    }]);*/
+
+    var moistXhttp = new XMLHttpRequest();
+    moistXhttp.open("GET", "http://18.221.30.192/last-moist-data", true);
+    moistXhttp.onreadystatechange = function(){
+        if(moistXhttp.readyState === 4 && moistXhttp.status === 200){
+            /*lastDate = new Date("2017-12-07T22:55:25.754Z").toISOString();*/
+            moistLastDate = new Date().toISOString();
+            /*console.log(moistXhttp.responseText);*/
+            var moistRecords = JSON.parse(moistXhttp.responseText);
+            var moistZero = [];
+            var moistTimesZero = [];
+            var moistOne = [];
+            var moistTimesOne = [];
+            var moistTwo = [];
+            var moistTimesTwo = [];
+            for(var i = 0; i < moistRecords[0].length; i++){
+                moistZero.push(moistRecords[0][i].value);
+                moistTimesZero.push(moistRecords[0][i].date);
+                moistOne.push(moistRecords[1][i].value);
+                moistTimesOne.push(moistRecords[1][i].date);
+                moistTwo.push(moistRecords[2][i].value);
+                moistTimesTwo.push(moistRecords[2][i].date);
+            }
+
+            /*var time = new Date();*/
+            var moistZeroTrace = {
+                x: moistTimesZero,
+                y: moistZero,
+                mode: 'lines+markers',
+                type: 'scatter',
+                name: 'Sensor Zero'
+                /*mode: 'lines',*/
+                /*line: {color: '#80CAF6'}*/
+            };
+
+            var moistOneTrace = {
+                x: moistTimesOne,
+                y: moistOne,
                 mode: 'lines+markers',
                 type: 'scatter',
                 name: 'Sensor One'
@@ -173,14 +331,22 @@ Hello World
                 /*line: {color: '#80CAF6'}*/
             };
 
-            var allTraces = [sensorZeroTrace, sensorOneTrace, sensorTwoTrace];
-            Plotly.plot('graph', allTraces, layout);
+            var moistTwoTrace = {
+                x: moistTimesTwo,
+                y: moistTwo,
+                mode: 'lines+markers',
+                type: 'scatter',
+                name: 'Sensor Two'
+                /*mode: 'lines',*/
+                /*line: {color: '#80CAF6'}*/
+            };
 
-            var cnt = 0;
-            var interval = setInterval(stream, 1000);
-            document.getElementById("data").innerHTML = records[0].value + " " + records.length;
+            var allTraces = [moistZeroTrace, moistOneTrace, moistTwoTrace];
+            Plotly.plot('moistureGraph', allTraces, moistLayout);
+
+            var interval = setInterval(moistStream, 1000);
         }
     };
-    xhttp.send();
+    moistXhttp.send();
 </script>
 </html>

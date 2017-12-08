@@ -160,7 +160,6 @@ int main(void)
 		  /*f_write(&MyFile, "\n", 1, (void *)&wbytes);*/
 		  serverComm(display, rcvBuffer);
 	  }
-	  HAL_Delay(1000);
   }
   /* USER CODE END WHILE */
   /*f_close(&MyFile);
