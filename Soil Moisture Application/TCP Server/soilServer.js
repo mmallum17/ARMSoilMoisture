@@ -16,21 +16,22 @@ c.on('end', () => {
 c.on('data', function (chunk) {
     console.log(chunk.toString());
     let tokens = chunk.toString().split(",");
-    let moisture = parseFloat(tokens[0]);
-    let temperature = parseFloat(tokens[1]);
+    let sensor = parseInt(tokens[0]);
+    let moisture = parseFloat(tokens[1]);
+    let temperature = parseFloat(tokens[2]);
     MongoClient.connect(url, function(err, db){
         if(err){
             throw err;
         }
         console.log("Database connected");
-        let myobj = { date: new Date(), sensor: 0, value: moisture};
+        let myobj = { date: new Date(), sensor: sensor, value: moisture};
         db.collection("Moisture").insertOne(myobj, function(err, res) {
             if(err){
                 throw err;
             }
             console.log("Moisture Inserted");
         });
-        myobj = { date: new Date(), sensor: 0, value: temperature};
+        myobj = { date: new Date(), sensor: sensor, value: temperature};
         db.collection("Temperature").insertOne(myobj, function(err, res) {
             if(err){
                 throw err;
