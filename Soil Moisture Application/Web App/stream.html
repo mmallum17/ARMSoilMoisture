@@ -16,6 +16,25 @@ Hello World
         return Math.random();
     }
 
+    var layout = {
+        title: 'Temperature',
+        xaxis: {
+            title: 'Time',
+            titlefont: {
+                family: 'Courier New, monospace',
+                size: 18,
+                color: '#7f7f7f'
+            }
+        },
+        yaxis: {
+            title: 'Celsius',
+            titlefont: {
+                family: 'Courier New, monospace',
+                size: 18,
+                color: '#7f7f7f'
+            }
+        }
+    };
     var lastDate;
     function stream(){
         var xhttp = new XMLHttpRequest();
@@ -27,18 +46,58 @@ Hello World
                 /*document.getElementById("data").innerHTML = records;*/
                 if(records.length !== 0){
                     lastDate = new Date().toISOString();
-                    var temps = [];
-                    var times = [];
+                    var tempsZero = [];
+                    var timesZero = [];
+                    var tempsOne = [];
+                    var timesOne = [];
+                    var tempsTwo = [];
+                    var timesTwo = [];
                     for(var i = 0; i < records.length; i++){
-                        temps.push(records[i].value);
-                        times.push(records[i].date);
+                        switch(records[i].sensor) {
+                            case 0:
+                                tempsZero.push(records[i].value);
+                                timesZero.push(records[i].date);
+                                break;
+                            case 1:
+                                tempsOne.push(records[i].value);
+                                timesOne.push(records[i].date);
+                                break;
+                            case 2:
+                                tempsTwo.push(records[i].value);
+                                timesTwo.push(records[i].date);
+                                break;
+
+                        }
+                    }
+
+                    var update;
+                    if(tempsZero.length !== 0){
+                        update = {
+                            x: [timesZero],
+                            y: [tempsZero]
+                        };
+                        Plotly.extendTraces('graph', update, [0]);
+                    }
+                    if(tempsOne.length !== 0){
+                        update = {
+                            x: [timesOne],
+                            y: [tempsOne]
+                        };
+                        Plotly.extendTraces('graph', update, [1]);
+                    }
+                    if(tempsTwo.length !== 0){
+                        update = {
+                            x: [timesTwo],
+                            y: [tempsTwo]
+                        };
+                        Plotly.extendTraces('graph', update, [2]);
                     }
                     /*document.getElementById("data").innerHTML = temps + " " + times;*/
-                    var update = {
+                    /*var update = {
                         x: [times],
                         y: [temps]
                     };
-                    Plotly.extendTraces('graph', update, [0]);
+                    Plotly.extendTraces('graph', update, [0]);*/
                 }
             }
         };
@@ -68,69 +127,57 @@ Hello World
             lastDate = new Date().toISOString();
             /*console.log(xhttp.responseText);*/
             var records = JSON.parse(xhttp.responseText);
-            var temps = [];
-            var times = [];
-            for(var i = 0; i < records.length; i++){
-                temps.push(records[i].value);
-                times.push(records[i].date);
+            var tempsZero = [];
+            var timesZero = [];
+            var tempsOne = [];
+            var timesOne = [];
+            var tempsTwo = [];
+            var timesTwo = [];
+            for(var i = 0; i < records[0].length; i++){
+                tempsZero.push(records[0][i].value);
+                timesZero.push(records[0][i].date);
+                tempsOne.push(records[1][i].value);
+                timesOne.push(records[1][i].date);
+                tempsTwo.push(records[2][i].value);
+                timesTwo.push(records[2][i].date);
             }
 
             /*var time = new Date();*/
-            var data = [{
-               x: [times[records.length - 1]],
-               y: [temps[records.length - 1]],
-               mode: 'lines+marker',
-               type: 'scatter',
-               line: {color: '#80CAF6'}
-            }];
-            Plotly.plot('graph', data);
-            /*Plotly.plot('graph', [{
-                y: [1,2,3].map(rand),
-                mode: 'lines',
-                line: {color: '#80CAF6'}
-            }]);*/
-            /*Plotly.plot('graph', [{
-                x: [times[0]],
-                y: [temps[0]],
-                mode: 'lines',
-                line: {color: '#80CAF6'}
-            }]);*/
-            /*var data = [
-                {
-                    x: times,
-                    y: temps,
-                    type: 'scatter'
-                }
-            ];*/
-            /*Plotly.newPlot('graph', data);*/
-            /*var interval = setInterval(function() {
+            var sensorZeroTrace = {
+                x: timesZero,
+                y: tempsZero,
+                mode: 'lines+markers',
+                type: 'scatter',
+                name: 'Sensor Zero'
+                /*mode: 'lines',*/
+                /*line: {color: '#80CAF6'}*/
+            };
 
-                var time = new Date();
-                Plotly.extendTraces('graph', {
-                    x: [[time]],
-                    y: [[rand()]]
-                }, [0]);
+            var sensorOneTrace = {
+                x: timesOne,
+                y: tempsOne,
+                mode: 'lines+markers',
+                type: 'scatter',
+                name: 'Sensor One'
+                /*mode: 'lines',*/
+                /*line: {color: '#80CAF6'}*/
+            };
 
-                if(cnt === 100) clearInterval(interval);
-            }, 1000);*/
+            var sensorTwoTrace = {
+                x: timesTwo,
+                y: tempsTwo,
+                mode: 'lines+markers',
+                type: 'scatter',
+                name: 'Sensor One'
+                /*mode: 'lines',*/
+                /*line: {color: '#80CAF6'}*/
+            };
+
+            var allTraces = [sensorZeroTrace, sensorOneTrace, sensorTwoTrace];
+            Plotly.plot('graph', allTraces, layout);
+
             var cnt = 0;
             var interval = setInterval(stream, 1000);
-            /*function() {
-                var time = new Date();
-                var update = {
-                    x: [[time]],
-                    y: [[rand()]]
-                };
-
-                Plotly.extendTraces('graph', update, [0]);
-                cnt++;
-                if(cnt === 20) clearInterval(interval);
-            }, 1000);*/
-            /*Plotly.plot('graph', [{
-                y: temps,
-                mode: 'lines',
-                line: {color: '#80CAF6'}
-            }]);*/
             document.getElementById("data").innerHTML = records[0].value + " " + records.length;
         }
     };

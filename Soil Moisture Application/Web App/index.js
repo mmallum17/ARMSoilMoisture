@@ -44,18 +44,35 @@ app.get('/newdata', function(req, res){
 
 app.get('/lastdata', function(req, res){
     MongoClient.connect(url, function(err, db){
+        var allLastData = [];
         if(err){
             throw err;
         }
         console.log("Database connected");
-        db.collection("Temperature").find({}).limit(1).sort({$natural: -1}).toArray(function(err, result){
+        db.collection("Temperature").find({sensor: 0}).limit(1).sort({$natural: -1}).toArray(function(err, lastResultZero){
             if(err){
                 throw err;
             }
-            /*console.log(result);*/
-            res.send(result);
+            allLastData.push(lastResultZero);
+            db.collection("Temperature").find({sensor: 1}).limit(1).sort({$natural: -1}).toArray(function(err, lastResultOne){
+                if(err){
+                    throw err;
+                }
+                allLastData.push(lastResultOne);
+                db.collection("Temperature").find({sensor: 2}).limit(1).sort({$natural: -1}).toArray(function(err, lastResultTwo){
+                    if(err){
+                        throw err;
+                    }
+                    allLastData.push(lastResultTwo);
+                    res.send(allLastData);
+                    db.close();
+                });
+
+            });
+                /*console.log(result);*/
+            /*res.send(result);*/
         });
-        db.close();
+        /*db.close();*/
     });
 });
 
