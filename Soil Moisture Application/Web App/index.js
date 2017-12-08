@@ -60,18 +60,37 @@ app.get('/lastdata', function(req, res){
 });
 
 app.get('/data', function(req, res){
+    var sensorData = [];
     MongoClient.connect(url, function(err, db){
         if(err){
             throw err;
         }
         console.log("Database connected");
-        db.collection("Temperature").find({}).limit(50).sort({$natural: -1}).toArray(function(err, result){
+        db.collection("Temperature").find({sensor: 0}).limit(50).sort({$natural: -1}).toArray(function(err, resultZero){
            if(err){
                throw err;
            }
+           sensorData.push(resultZero);
+            db.collection("Temperature").find({sensor: 1}).limit(50).sort({$natural: -1}).toArray(function(err, resultOne) {
+                if (err) {
+                    throw err;
+                }
+                sensorData.push(resultOne);
+                db.collection("Temperature").find({sensor: 2}).limit(50).sort({$natural: -1}).toArray(function (err, resultTwo) {
+                    if (err) {
+                        throw err;
+                    }
+                    sensorData.push(resultTwo);
+                    console.log(sensorData[0]);
+                    console.log(sensorData[1]);
+                    console.log(sensorData[2]);
+                    res.send(sensorData);
+                    db.close();
+                });
+            });
            /*console.log(result);*/
-           res.send(result);
+           /*res.send(result);*/
         });
-        db.close();
+        /*db.close();*/
     });
 });

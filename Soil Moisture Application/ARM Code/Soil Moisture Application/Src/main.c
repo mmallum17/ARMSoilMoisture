@@ -149,7 +149,7 @@ int main(void)
 		  floatToString(celsius, celsiusString, 2);
 		  floatToString(fahrenheit, fahrenheitString, 2);
 		  /*HAL_Delay(1000);*/
-		  sprintf(display,"%d,%s", samplesFrame.moistureSample, celsiusString);
+		  sprintf(display,"%d,%d,%s", i, samplesFrame.moistureSample, celsiusString);
 		  ssd1306_WriteString(display, 1);
 		  updateScreen();
 		  setCursorX(0);
