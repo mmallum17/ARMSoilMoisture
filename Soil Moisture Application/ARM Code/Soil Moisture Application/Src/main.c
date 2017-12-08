@@ -99,7 +99,7 @@ int main(void)
 	float fahrenheit = 0;
 	char celsiusString[10];
 	char fahrenheitString[10];
-	uint8_t i = 10;
+	uint8_t i = 0;
 	uint32_t wbytes; /* File write counts */
 	char rcvBuffer[80] = "";
   /* USER CODE END 1 */
@@ -131,40 +131,46 @@ int main(void)
   /* USER CODE BEGIN 2 */
   ssd1306Init();
   initXbee();
-  initSd();
+  /*initSd();*/
   connectServer();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (i--)
+  while (1)
   {
-	  sensorTransmit();
-	  sensorReceive(&samplesFrame);
-	  celsius = toCelsius(samplesFrame.temperatureSample);
-	  fahrenheit = toFahrenheit(celsius);
-	  floatToString(celsius, celsiusString, 2);
-	  floatToString(fahrenheit, fahrenheitString, 2);
-	  /*HAL_Delay(1000);*/
 	  clearScreen();
-	  sprintf(display,"%d,%s", samplesFrame.moistureSample, celsiusString);
-	  ssd1306_WriteString(display, 1);
-	  updateScreen();
-	  /*f_write(&MyFile, display, strlen(display), (void *)&wbytes);*/
-	  f_puts(display, &MyFile);
-	  f_putc('\n', &MyFile);
-	  /*f_write(&MyFile, "\n", 1, (void *)&wbytes);*/
-	  serverComm(display, rcvBuffer);
+	  for(i = 0; i < 3; i++)
+	  {
+		  sensorTransmit(i);
+		  sensorReceive(&samplesFrame);
+		  celsius = toCelsius(samplesFrame.temperatureSample);
+		  fahrenheit = toFahrenheit(celsius);
+		  floatToString(celsius, celsiusString, 2);
+		  floatToString(fahrenheit, fahrenheitString, 2);
+		  /*HAL_Delay(1000);*/
+		  sprintf(display,"%d,%s", samplesFrame.moistureSample, celsiusString);
+		  ssd1306_WriteString(display, 1);
+		  updateScreen();
+		  setCursorX(0);
+		  setCursorY(getCursorY() + 11);
+		  /*f_write(&MyFile, display, strlen(display), (void *)&wbytes);*/
+		  /*f_puts(display, &MyFile);
+		  f_putc('\n', &MyFile);*/
+		  /*f_write(&MyFile, "\n", 1, (void *)&wbytes);*/
+		  serverComm(display, rcvBuffer);
+	  }
+	  HAL_Delay(1000);
   }
   /* USER CODE END WHILE */
-  f_close(&MyFile);
+  /*f_close(&MyFile);
   clearScreen();
   ssd1306_WriteString("Closed", 1);
   updateScreen();
   FATFS_UnLinkDriver(mynewdiskPath);
   clearScreen();
   ssd1306_WriteString("Unlinked", 1);
-  updateScreen();
+  updateScreen();*/
 
   switchCmdMode();
   closeServer();

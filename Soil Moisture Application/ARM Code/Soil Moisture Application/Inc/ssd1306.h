@@ -8,6 +8,10 @@
 #ifndef SSD1306_H_
 #define SSD1306_H_
 /*Public Function Prototypes*/
+void setCursorX(uint8_t position);
+void setCursorY(uint8_t position);
+uint8_t getCursorX();
+uint8_t getCursorY();
 void ssd1306Init();
 void ssd1306WriteCommand(uint8_t command);
 void clearScreen();

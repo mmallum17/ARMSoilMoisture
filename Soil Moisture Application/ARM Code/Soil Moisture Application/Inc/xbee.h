@@ -20,7 +20,7 @@ typedef struct
 
 /*Public Function Prototypes*/
 void initXbee();
-void sensorTransmit();
+void sensorTransmit(uint8_t sensor);
 void sensorReceive(APIResponseFrame* samplesFrame);
 float toCelsius(uint16_t tempSample);
 float toFahrenheit(float celsius);

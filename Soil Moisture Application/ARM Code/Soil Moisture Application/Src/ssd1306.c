@@ -7,7 +7,7 @@
 /*Include*/
 #include <stdint.h>
 #include "stm32l1xx_hal.h"
-
+#include "ssd1306.h"
 
 /*Private Variables*/
 extern I2C_HandleTypeDef hi2c1;
@@ -289,4 +289,24 @@ char ssd1306_WriteString(char* str, uint8_t color)
 
 	// Alles gelukt, we sturen dus 0 terug
 	return *str;
+}
+
+void setCursorX(uint8_t position)
+{
+	currentX = position;
+}
+
+void setCursorY(uint8_t position)
+{
+	currentY = position;
+}
+
+uint8_t getCursorX()
+{
+	return currentX;
+}
+
+uint8_t getCursorY()
+{
+	return currentY;
 }

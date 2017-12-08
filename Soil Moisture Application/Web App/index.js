@@ -65,7 +65,7 @@ app.get('/data', function(req, res){
             throw err;
         }
         console.log("Database connected");
-        db.collection("Temperature").find({}).toArray(function(err, result){
+        db.collection("Temperature").find({}).limit(50).sort({$natural: -1}).toArray(function(err, result){
            if(err){
                throw err;
            }
