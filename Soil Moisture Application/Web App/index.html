@@ -3,13 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <title>Soil Moisture App</title>
+    <style>
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        li {
+            float: left;
+        }
+
+        li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        /* Change the link color to #111 (black) on hover */
+        li a:hover {
+            background-color: #111;
+        }
+
+        .active {
+            background-color: #4CAF50;
+        }
+
+        ul {
+            position: fixed;
+            top: 0;
+            width: 100%;
+        }
+        h1{
+            margin-top: 50px;
+        }
+
+    </style>
 </head>
 <body>
+<ul>
+    <li><a href="http://18.221.30.192/" class="active">Home</a></li>
+    <li><a href="http://18.221.30.192/stream">Live Stream</a></li>
+    <li><a href="http://18.221.30.192/alldata">Past Data</a></li>
+</ul>
+<h1>SOIL MOISTURE APP</h1>
+<h2>By Marcus Mallum</h2>
+<!--
 <form action="http://18.221.30.192/stream">
     <input type="submit" value="Stream"/>
 </form>
 <form action="http://18.221.30.192/alldata">
     <input type="submit" value="All Data"/>
 </form>
+-->
 </body>
 </html>

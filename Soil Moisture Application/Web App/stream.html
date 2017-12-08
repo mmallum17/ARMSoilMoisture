@@ -2,14 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hello World Title</title>
+    <title>Soil Moisture App</title>
+    <style>
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            position: absolute;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        li {
+            float: left;
+        }
+
+        li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        /* Change the link color to #111 (black) on hover */
+        li a:hover {
+            background-color: #111;
+        }
+
+        .active {
+            background-color: #4CAF50;
+        }
+
+        ul {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 99999;
+        }
+        #moistureGraph{
+            margin: 50px;
+        }
+
+    </style>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-Hello World
+<ul>
+    <li><a href="http://18.221.30.192/">Home</a></li>
+    <li><a href="http://18.221.30.192/stream" class="active">Live Stream</a></li>
+    <li><a href="http://18.221.30.192/alldata">Past Data</a></li>
+</ul>
 <div id="moistureGraph"></div>
 <div id="temperatureGraph"></div>
-<p id="data"></p>
+<!--<p id="data"></p>-->
 </body>
 <!--<script src="graph.js"></script>-->
 <script>
@@ -93,31 +139,11 @@ Hello World
                         };
                         Plotly.extendTraces('temperatureGraph', tempUpdate, [2]);
                     }
-                    /*document.getElementById("data").innerHTML = temps + " " + tempTimes;*/
-                    /*var tempUpdate = {
-                        x: [tempTimes],
-                        y: [temps]
-                    };
-                    Plotly.extendTraces('graph', tempUpdate, [0]);*/
                 }
             }
         };
         tempXhttp.send();
-
-        /*var dates = [new Date(), new Date(), new Date()];
-        var values = [30, 15, 25];
-
-        var update = {
-            x: [dates],
-            y: [values]
-        };
-        Plotly.extendTraces('graph', update, [0]);*/
     }
-    /*Plotly.plot('graph', [{
-        y: [1,2,3].map(rand),
-        mode: 'lines',
-        line: {color: '#80CAF6'}
-    }]);*/
 
     var tempXhttp = new XMLHttpRequest();
     tempXhttp.open("GET", "http://18.221.30.192/last-temp-data", true);
@@ -261,31 +287,11 @@ Hello World
                         };
                         Plotly.extendTraces('moistureGraph', moistUpdate, [2]);
                     }
-                    /*document.getElementById("data").innerHTML = temps + " " + tempTimes;*/
-                    /*var tempUpdate = {
-                        x: [tempTimes],
-                        y: [temps]
-                    };
-                    Plotly.extendTraces('graph', tempUpdate, [0]);*/
                 }
             }
         };
         moistXhttp.send();
-
-        /*var dates = [new Date(), new Date(), new Date()];
-        var values = [30, 15, 25];
-
-        var update = {
-            x: [dates],
-            y: [values]
-        };
-        Plotly.extendTraces('graph', update, [0]);*/
     }
-    /*Plotly.plot('graph', [{
-        y: [1,2,3].map(rand),
-        mode: 'lines',
-        line: {color: '#80CAF6'}
-    }]);*/
 
     var moistXhttp = new XMLHttpRequest();
     moistXhttp.open("GET", "http://18.221.30.192/last-moist-data", true);

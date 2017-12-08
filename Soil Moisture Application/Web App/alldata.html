@@ -2,14 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hello World Title</title>
+    <title>Soil Moisture App</title>
+    <style>
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            position: absolute;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        li {
+            float: left;
+        }
+
+        li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        /* Change the link color to #111 (black) on hover */
+        li a:hover {
+            background-color: #111;
+        }
+
+        .active {
+            background-color: #4CAF50;
+        }
+
+        ul {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 99999;
+        }
+        #moistureGraph{
+            margin: 50px;
+        }
+
+    </style>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-Hello World
+<ul>
+    <li><a href="http://18.221.30.192/">Home</a></li>
+    <li><a href="http://18.221.30.192/stream">Live Stream</a></li>
+    <li><a href="http://18.221.30.192/alldata" class="active">Past Data</a></li>
+</ul>
 <div id="moistureGraph"></div>
 <div id="temperatureGraph"></div>
-<p id="data"></p>
+<!--<p id="data"></p>-->
 </body>
 <!--<script src="graph.js"></script>-->
 <script>
@@ -126,7 +172,7 @@ Hello World
             var allTraces = [tempsZeroTrace, tempsOneTrace, tempsTwoTrace];
             Plotly.plot('temperatureGraph', allTraces, tempLayout);
 
-            document.getElementById("data").innerHTML = JSON.stringify(tempRecords[0][0])+ " " + tempRecords[0].length;
+//            document.getElementById("data").innerHTML = JSON.stringify(tempRecords[0][0])+ " " + tempRecords[0].length;
         }
     };
     tempXhttp.send();
