@@ -16,6 +16,43 @@ Hello World
         return Math.random();
     }
 
+    var lastDate;
+    function stream(){
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("GET", "http://18.221.30.192/newdata?date="+lastDate, true);
+        xhttp.onreadystatechange = function(){
+            if(xhttp.readyState === 4 && xhttp.status === 200){
+                /*lastDate = new Date().toISOString();*/
+                var records = JSON.parse(xhttp.responseText);
+                /*document.getElementById("data").innerHTML = records;*/
+                if(records.length !== 0){
+                    lastDate = new Date().toISOString();
+                    var temps = [];
+                    var times = [];
+                    for(var i = 0; i < records.length; i++){
+                        temps.push(records[i].value);
+                        times.push(records[i].date);
+                    }
+                    /*document.getElementById("data").innerHTML = temps + " " + times;*/
+                    var update = {
+                        x: [times],
+                        y: [temps]
+                    };
+                    Plotly.extendTraces('graph', update, [0]);
+                }
+            }
+        };
+        xhttp.send();
+
+        /*var dates = [new Date(), new Date(), new Date()];
+        var values = [30, 15, 25];
+
+        var update = {
+            x: [dates],
+            y: [values]
+        };
+        Plotly.extendTraces('graph', update, [0]);*/
+    }
     /*Plotly.plot('graph', [{
         y: [1,2,3].map(rand),
         mode: 'lines',
@@ -24,9 +61,11 @@ Hello World
 
     var cnt = 0;
     var xhttp = new XMLHttpRequest();
-    xhttp.open("GET", "http://18.221.30.192/data", true);
+    xhttp.open("GET", "http://18.221.30.192/lastdata", true);
     xhttp.onreadystatechange = function(){
         if(xhttp.readyState == 4 && xhttp.status == 200){
+            /*lastDate = new Date("2017-12-07T22:55:25.754Z").toISOString();*/
+            lastDate = new Date().toISOString();
             /*console.log(xhttp.responseText);*/
             var records = JSON.parse(xhttp.responseText);
             var temps = [];
@@ -38,9 +77,10 @@ Hello World
 
             /*var time = new Date();*/
             var data = [{
-               x: times,
-               y: temps,
-               mode: 'lines',
+               x: [times[records.length - 1]],
+               y: [temps[records.length - 1]],
+               mode: 'lines+marker',
+               type: 'scatter',
                line: {color: '#80CAF6'}
             }];
             Plotly.plot('graph', data);
@@ -65,15 +105,17 @@ Hello World
             /*Plotly.newPlot('graph', data);*/
             /*var interval = setInterval(function() {
 
+                var time = new Date();
                 Plotly.extendTraces('graph', {
-                    x: [new Date()],
+                    x: [[time]],
                     y: [[rand()]]
                 }, [0]);
 
                 if(cnt === 100) clearInterval(interval);
-            }, 300);*/
+            }, 1000);*/
             var cnt = 0;
-            var interval = setInterval(function() {
+            var interval = setInterval(stream, 1000);
+            /*function() {
                 var time = new Date();
                 var update = {
                     x: [[time]],
@@ -83,7 +125,7 @@ Hello World
                 Plotly.extendTraces('graph', update, [0]);
                 cnt++;
                 if(cnt === 20) clearInterval(interval);
-            }, 1000);
+            }, 1000);*/
             /*Plotly.plot('graph', [{
                 y: temps,
                 mode: 'lines',

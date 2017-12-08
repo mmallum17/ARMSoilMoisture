@@ -23,6 +23,42 @@ app.get('/alldata', function(req, res){
     res.sendFile(__dirname + '/alldata.html');
 });
 
+app.get('/newdata', function(req, res){
+    var lastDate = new Date(req.query.date);
+    console.log(lastDate);
+    MongoClient.connect(url, function(err, db){
+        if(err){
+            throw err;
+        }
+        console.log("Database connected");
+        db.collection("Temperature").find({date: {$gte: lastDate}}).toArray(function(err, result){
+            if(err){
+                throw err;
+            }
+            /*console.log(result);*/
+            res.send(result);
+        });
+        db.close();
+    });
+});
+
+app.get('/lastdata', function(req, res){
+    MongoClient.connect(url, function(err, db){
+        if(err){
+            throw err;
+        }
+        console.log("Database connected");
+        db.collection("Temperature").find({}).limit(1).sort({$natural: -1}).toArray(function(err, result){
+            if(err){
+                throw err;
+            }
+            /*console.log(result);*/
+            res.send(result);
+        });
+        db.close();
+    });
+});
+
 app.get('/data', function(req, res){
     MongoClient.connect(url, function(err, db){
         if(err){
